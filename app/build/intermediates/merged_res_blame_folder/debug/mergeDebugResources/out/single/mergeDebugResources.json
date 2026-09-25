@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.pos.pik.app-debug-57:/drawable_pospik.png.flat",
+        "source": "com.pos.pik.app-main-59:/drawable/pospik.png"
+    },
+    {
+        "merged": "C:\\Users\\EDP\\.gradle\\daemon\\9.3.0\\com.pos.pik.app-debug-57:\\xml_file_paths.xml.flat",
+        "source": "C:\\Users\\EDP\\.gradle\\daemon\\9.3.0\\com.pos.pik.app-main-59:\\xml\\file_paths.xml"
+    }
+]
