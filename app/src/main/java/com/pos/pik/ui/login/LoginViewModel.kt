@@ -3,11 +3,10 @@ package com.pos.pik.ui.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.pos.pik.data.local.AppSettingEntity
 import com.pos.pik.data.local.UserWithRole
 import com.pos.pik.data.repository.PosRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 sealed interface LoginUiState {
@@ -21,6 +20,9 @@ class LoginViewModel(private val repository: PosRepository) : ViewModel() {
 
     var usernameState = MutableStateFlow("admin")
     var passwordState = MutableStateFlow("123")
+
+    val settings: StateFlow<AppSettingEntity?> = repository.getSettings()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()

@@ -5,10 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.pos.pik.data.local.UserWithRole
 import com.pos.pik.ui.login.LoginScreen
 import com.pos.pik.ui.login.LoginViewModel
 import com.pos.pik.ui.main.MainScreen
+import com.pos.pik.ui.main.MainViewModel
 import com.pos.pik.ui.theme.POSPIKTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,7 +19,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             POSPIKTheme {
-                var currentUser by remember { mutableStateOf<UserWithRole?>(null) }
+                val mainViewModel: MainViewModel = viewModel()
+                val currentUser by mainViewModel.currentUser.collectAsState()
 
                 if (currentUser == null) {
                     val loginViewModel: LoginViewModel = viewModel(
@@ -28,7 +29,7 @@ class MainActivity : ComponentActivity() {
                     LoginScreen(
                         viewModel = loginViewModel,
                         onLoginSuccess = { user ->
-                            currentUser = user
+                            mainViewModel.setCurrentUser(user)
                         }
                     )
                 } else {
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
                         user = currentUser!!,
                         repository = repository,
                         onLogout = {
-                            currentUser = null
+                            mainViewModel.setCurrentUser(null)
                         }
                     )
                 }

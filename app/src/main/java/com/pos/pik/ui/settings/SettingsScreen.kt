@@ -1,6 +1,9 @@
 package com.pos.pik.ui.settings
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pos.pik.util.DatabaseBackupUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +40,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var paperSize by remember { mutableIntStateOf(80) }
 
     var expandedPaperSize by remember { mutableStateOf(false) }
+    var selectedRestoreUri by remember { mutableStateOf<Uri?>(null) }
+
+    val restoreFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            selectedRestoreUri = uri
+        }
+    }
 
     LaunchedEffect(currentSettings) {
         currentSettings?.let { s ->
@@ -140,7 +153,10 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         ) {
             OutlinedButton(
                 onClick = {
-                    Toast.makeText(context, "Fitur Cadangan Database Room Aktif", Toast.LENGTH_SHORT).show()
+                    val ok = DatabaseBackupUtil.performBackup(context)
+                    if (!ok) {
+                        Toast.makeText(context, "Gagal membuat backup database!", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 modifier = Modifier.weight(1f)
             ) {
@@ -151,7 +167,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
             OutlinedButton(
                 onClick = {
-                    Toast.makeText(context, "Fitur Restore Database Room Aktif", Toast.LENGTH_SHORT).show()
+                    restoreFileLauncher.launch("*/*")
                 },
                 modifier = Modifier.weight(1f)
             ) {
@@ -159,6 +175,36 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("RESTORE")
             }
+        }
+
+        if (selectedRestoreUri != null) {
+            val restoreUri = selectedRestoreUri!!
+            AlertDialog(
+                onDismissRequest = { selectedRestoreUri = null },
+                title = { Text("Konfirmasi Restore Database") },
+                text = { Text("PERINGATAN: Seluruh data saat ini akan diganti dengan data dari file backup SQLite yang dipilih. Lanjutkan?") },
+                confirmButton = {
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        onClick = {
+                            val ok = DatabaseBackupUtil.performRestore(context, restoreUri)
+                            selectedRestoreUri = null
+                            if (ok) {
+                                Toast.makeText(context, "Database Berhasil Dipulihkan (Restore Sukses)!", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "Gagal memulihkan database dari file terpilih!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Text("PULIHKAN")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { selectedRestoreUri = null }) {
+                        Text("BATAL")
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))

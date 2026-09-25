@@ -31,6 +31,9 @@ fun LoginScreen(
     val username by viewModel.usernameState.collectAsState()
     val password by viewModel.passwordState.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val settings by viewModel.settings.collectAsState()
+
+    val warungName = settings?.setWarungName?.takeIf { it.isNotBlank() } ?: "POS PIK"
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -82,7 +85,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = "POS PIK",
+                        text = warungName,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary,

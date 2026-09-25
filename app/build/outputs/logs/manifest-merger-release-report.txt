@@ -1,20 +1,20 @@
 -- Merging decision tree log ---
 provider#androidx.core.content.FileProvider
-INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:28:9-36:20
+INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:29:9-37:20
 	android:grantUriPermissions
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:32:13-47
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:33:13-47
 	android:authorities
 		INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:30:13-64
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:31:13-64
 	android:exported
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:31:13-37
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:32:13-37
 	android:name
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:29:13-62
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:30:13-62
 manifest
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-40:12
-INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-40:12
-INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-40:12
-INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-40:12
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-41:12
+INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-41:12
+INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-41:12
+INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:2:1-41:12
 MERGED from [androidx.navigation:navigation-common:2.7.7] C:\Users\EDP\.gradle\caches\9.3.0\transforms\f767baa6a8335aef746e18f610c7ee29\workspace\transformed\navigation-common-2.7.7\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.navigation:navigation-runtime:2.7.7] C:\Users\EDP\.gradle\caches\9.3.0\transforms\726e147a15adbe02962d4b34e8a94a48\workspace\transformed\navigation-runtime-2.7.7\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.navigation:navigation-common-ktx:2.7.7] C:\Users\EDP\.gradle\caches\9.3.0\transforms\b50750d2ae36a0c6bd76f9f8027b34fc\workspace\transformed\navigation-common-ktx-2.7.7\AndroidManifest.xml:2:1-7:12
@@ -96,8 +96,8 @@ ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:6:5-81
 	android:name
 		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:6:22-78
 application
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:8:5-38:19
-INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:8:5-38:19
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:8:5-39:19
+INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:8:5-39:19
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\EDP\.gradle\caches\9.3.0\transforms\12c65ef5d83aa5c4e820c5a5162d9a36\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\EDP\.gradle\caches\9.3.0\transforms\12c65ef5d83aa5c4e820c5a5162d9a36\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.lifecycle:lifecycle-process:2.8.4] C:\Users\EDP\.gradle\caches\9.3.0\transforms\2fa0d2d89a91f8cfc5c13a6e55a1a11e\workspace\transformed\lifecycle-process-2.8.4\AndroidManifest.xml:23:5-33:19
@@ -131,31 +131,33 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\EDP\.gradle\caches
 	android:name
 		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:9:9-39
 activity#com.pos.pik.MainActivity
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:17:9-26:20
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:17:9-27:20
 	android:windowSoftInputMode
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:20:13-55
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:21:13-55
 	android:exported
 		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:19:13-36
+	android:configChanges
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:20:13-87
 	android:theme
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:21:13-48
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:22:13-48
 	android:name
 		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:18:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:22:13-25:29
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:23:13-26:29
 action#android.intent.action.MAIN
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:23:17-69
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:24:17-69
 	android:name
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:23:25-66
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:24:25-66
 category#android.intent.category.LAUNCHER
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:24:17-77
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:25:17-77
 	android:name
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:24:27-74
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:25:27-74
 meta-data#android.support.FILE_PROVIDER_PATHS
-ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:33:13-35:54
+ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:34:13-36:54
 	android:resource
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:35:17-51
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:36:17-51
 	android:name
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:34:17-67
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:35:17-67
 uses-sdk
 INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml
