@@ -1,4 +1,4 @@
-#Fri Sep 25 16:12:36 WITA 2026
+#Fri Sep 25 16:45:33 WITA 2026
 base.0=D\:\\android\\POS_PIK\\app\\build\\intermediates\\dex\\release\\mergeDexRelease\\classes.dex
 base.1=D\:\\android\\POS_PIK\\app\\build\\intermediates\\dex\\release\\mergeDexRelease\\classes2.dex
 path.0=classes.dex

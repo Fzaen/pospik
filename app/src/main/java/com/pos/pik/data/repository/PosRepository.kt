@@ -59,14 +59,11 @@ class PosRepository(private val db: AppDatabase) {
         return db.productDao().getActiveProducts(mainCat, query)
     }
 
-    suspend fun generateNextSku(mainCategory: String): String {
-        var prefix = "1"
-        if (mainCategory.contains("Minuman", ignoreCase = true)) prefix = "2"
-        if (mainCategory.contains("Cemilan", ignoreCase = true)) prefix = "3"
-
+    suspend fun generateNextSku(catId: Int): String {
+        val prefix = if (catId > 0) catId.toString() else "1"
         val lastSku = db.productDao().getLastSkuWithPrefix(prefix)
         return if (lastSku != null) {
-            val lastNum = lastSku.toIntOrNull() ?: (prefix + "0000").toInt()
+            val lastNum = lastSku.toLongOrNull() ?: (prefix + "0000").toLong()
             (lastNum + 1).toString()
         } else {
             "${prefix}0001"

@@ -31,8 +31,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -454,9 +456,17 @@ fun PaymentModalDialog(
     val change = paidAmount - total
     val isEnough = paidAmount >= total
 
-    val formattedInputText = remember(rawDigits) {
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = ""))
+    }
+
+    LaunchedEffect(rawDigits) {
         val num = rawDigits.toLongOrNull()
-        if (num != null) Formatters.formatNumber(num) else ""
+        val formatted = if (num != null) Formatters.formatNumber(num) else ""
+        textFieldValue = TextFieldValue(
+            text = formatted,
+            selection = TextRange(formatted.length)
+        )
     }
 
     AlertDialog(
@@ -473,9 +483,10 @@ fun PaymentModalDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = formattedInputText,
+                    value = textFieldValue,
                     onValueChange = { newValue ->
-                        rawDigits = newValue.filter { c -> c.isDigit() }
+                        val clean = newValue.text.filter { c -> c.isDigit() }
+                        rawDigits = clean
                     },
                     label = { Text("Uang Dibayar (Rp)") },
                     singleLine = true,

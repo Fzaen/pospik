@@ -58,6 +58,7 @@ class MasterProductViewModel(private val repository: PosRepository) : ViewModel(
     fun saveProduct(
         product: ProductWithCategory?,
         catId: Int,
+        customSku: String?,
         name: String,
         costPrice: Double,
         sellingPrice: Double,
@@ -65,8 +66,7 @@ class MasterProductViewModel(private val repository: PosRepository) : ViewModel(
     ) {
         viewModelScope.launch {
             if (product == null) {
-                val cat = categories.value.find { it.catId == catId }
-                val sku = repository.generateNextSku(cat?.catName ?: "Makanan")
+                val sku = if (!customSku.isNullOrBlank()) customSku.trim() else repository.generateNextSku(catId)
                 repository.addProduct(
                     ProductEntity(
                         prdSku = sku,

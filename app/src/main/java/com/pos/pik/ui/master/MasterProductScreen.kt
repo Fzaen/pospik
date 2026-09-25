@@ -200,8 +200,8 @@ fun ProductListView(viewModel: MasterProductViewModel) {
             product = editingProduct,
             categories = categories,
             onDismiss = { showFormDialog = false },
-            onSave = { catId, name, cost, sell, img ->
-                viewModel.saveProduct(editingProduct, catId, name, cost, sell, img)
+            onSave = { catId, customSku, name, cost, sell, img ->
+                viewModel.saveProduct(editingProduct, catId, customSku, name, cost, sell, img)
                 showFormDialog = false
             }
         )
@@ -359,9 +359,10 @@ fun ProductFormDialog(
     product: ProductWithCategory?,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
-    onSave: (catId: Int, name: String, cost: Double, sell: Double, image: String?) -> Unit
+    onSave: (catId: Int, customSku: String?, name: String, cost: Double, sell: Double, image: String?) -> Unit
 ) {
     var selectedCatId by remember { mutableStateOf(product?.prdCategoryId ?: categories.firstOrNull()?.catId ?: 0) }
+    var skuText by remember { mutableStateOf(product?.prdSku ?: "") }
     var nameText by remember { mutableStateOf(product?.prdName ?: "") }
     var costText by remember { mutableStateOf(product?.prdCostPrice?.toInt()?.toString() ?: "") }
     var sellText by remember { mutableStateOf(product?.prdSellingPrice?.toInt()?.toString() ?: "") }
@@ -528,6 +529,19 @@ fun ProductFormDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                if (product == null) {
+                    OutlinedTextField(
+                        value = skuText,
+                        onValueChange = { skuText = it },
+                        label = { Text("SKU / Barcode (Kosongkan jika otomatis)") },
+                        placeholder = { Text("Otomatis jika kosong...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 OutlinedTextField(
                     value = nameText,
                     onValueChange = { nameText = it },
@@ -565,6 +579,7 @@ fun ProductFormDialog(
                 onClick = {
                     onSave(
                         selectedCatId,
+                        skuText.ifBlank { null },
                         nameText,
                         costText.toDoubleOrNull() ?: 0.0,
                         sellText.toDoubleOrNull() ?: 0.0,
