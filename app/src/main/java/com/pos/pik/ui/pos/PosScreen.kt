@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -49,6 +50,11 @@ import com.pos.pik.ui.theme.SuccessGreen
 import com.pos.pik.util.Formatters
 import com.pos.pik.util.PrintHelper
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
+
+
 
 @Composable
 fun PosScreen(
@@ -324,55 +330,116 @@ fun PosScreen(
     }
 }
 
+val PriceGreen = Color(0xFF00E676) // Warna Hijau Cerah
 @Composable
 fun ProductCard(product: ProductWithCategory, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
     ) {
-        Column(modifier = Modifier.padding(6.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.LightGray.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (product.prdImage != null && product.prdImage.isNotEmpty()) {
-                    AsyncImage(
-                        model = product.prdImage,
-                        contentDescription = product.prdName,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 1. GAMBAR PRODUK (FULL & CERAH)
+            if (!product.prdImage.isNullOrEmpty()) {
+                AsyncImage(
+                    model = product.prdImage,
+                    contentDescription = product.prdName,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Gray.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(Icons.Default.Fastfood, contentDescription = null, tint = Color.Gray)
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            // 2. GRADASI SANGAT TIPIS DI DASAR KARTU (35.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(35.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.5f)
+                            )
+                        )
+                    )
+            )
 
-            Text(
-                text = product.prdName,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp,
-                maxLines = 1
-            )
-            Text(
-                text = "[${product.prdSku}]",
-                fontSize = 9.sp,
-                color = Color.Gray
-            )
-            Text(
-                text = Formatters.formatRupiah(product.prdSellingPrice),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
+            // 3. STRUKTUR TEKS 2 BARIS (LEBIH KE BAWAH & RAPAT)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomStart)
+                    .padding(start = 3.dp, end = 3.dp, bottom = 1.dp, top = 0.dp) // Padding bawah dirapatkan
+            ) {
+                // BARIS 1: NAMA PRODUK
+                Text(
+                    text = product.prdName,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = LocalTextStyle.current.copy(
+                        shadow = Shadow(
+                            color = Color.Black,
+                            offset = Offset(1f, 1f),
+                            blurRadius = 3f
+                        )
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(0.5.dp)) // Margin antar baris sangat rapat
+
+                // BARIS 2: SKU (KIRI) & HARGA (KANAN)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // SKU di Kiri
+                    Text(
+                        text = "[${product.prdSku}]",
+                        fontSize = 8.5.sp,
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = LocalTextStyle.current.copy(
+                            shadow = Shadow(
+                                color = Color.Black,
+                                offset = Offset(1f, 1f),
+                                blurRadius = 3f
+                            )
+                        )
+                    )
+
+                    // Harga di Kanan (Hijau Cerah)
+                    Text(
+                        text = Formatters.formatRupiah(product.prdSellingPrice),
+                        fontSize = 10.5.sp,
+                        color = PriceGreen,
+                        fontWeight = FontWeight.ExtraBold,
+                        style = LocalTextStyle.current.copy(
+                            shadow = Shadow(
+                                color = Color.Black,
+                                offset = Offset(1f, 1f),
+                                blurRadius = 3f
+                            )
+                        )
+                    )
+                }
+            }
         }
     }
 }
