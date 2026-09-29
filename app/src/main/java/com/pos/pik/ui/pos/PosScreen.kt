@@ -28,7 +28,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +37,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -50,9 +48,9 @@ import com.pos.pik.ui.theme.SuccessGreen
 import com.pos.pik.util.Formatters
 import com.pos.pik.util.PrintHelper
 import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.geometry.Offset
+import android.graphics.Paint
+import android.widget.TextView
+import androidx.compose.ui.viewinterop.AndroidView
 
 
 
@@ -114,22 +112,33 @@ fun PosScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChanged(it) },
-                    placeholder = { Text("Cari produk...", fontSize = 12.sp) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    placeholder = { Text("Cari produk...", fontSize = 13.sp) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 4.dp)
-                        .height(46.dp)
+                    // Hapus .height(46.dp) agar tingginya menyesuaikan secara alami tanpa terpotong
                 )
             }
         }
@@ -331,19 +340,21 @@ fun PosScreen(
 }
 
 val PriceGreen = Color(0xFF00E676) // Warna Hijau Cerah
+
+
 @Composable
 fun ProductCard(product: ProductWithCategory, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(140.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // 1. GAMBAR PRODUK (FULL & CERAH)
+            // 1. Gambar Produk
             if (!product.prdImage.isNullOrEmpty()) {
                 AsyncImage(
                     model = product.prdImage,
@@ -362,47 +373,24 @@ fun ProductCard(product: ProductWithCategory, onClick: () -> Unit) {
                 }
             }
 
-            // 2. GRADASI SANGAT TIPIS DI DASAR KARTU (35.dp)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(35.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.5f)
-                            )
-                        )
-                    )
-            )
-
-            // 3. STRUKTUR TEKS 2 BARIS (LEBIH KE BAWAH & RAPAT)
+            // 2. Konten Teks di Bagian Bawah
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomStart)
-                    .padding(start = 3.dp, end = 3.dp, bottom = 1.dp, top = 0.dp) // Padding bawah dirapatkan
+                    .padding(start = 6.dp, end = 6.dp, bottom = 4.dp)
             ) {
                 // BARIS 1: NAMA PRODUK
-                Text(
+                NativeOutlinedText(
                     text = product.prdName,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = LocalTextStyle.current.copy(
-                        shadow = Shadow(
-                            color = Color.Black,
-                            offset = Offset(1f, 1f),
-                            blurRadius = 3f
-                        )
-                    )
+                    textSizeSp = 12f,
+                    textColor = android.graphics.Color.WHITE,
+                    outlineColor = android.graphics.Color.BLACK,
+                    strokeWidthPx = 2f, // UBAH TEBAL OUTLINE NAMA DI SINI
+                    isBold = false
                 )
 
-                Spacer(modifier = Modifier.height(0.5.dp)) // Margin antar baris sangat rapat
+                Spacer(modifier = Modifier.height(1.dp))
 
                 // BARIS 2: SKU (KIRI) & HARGA (KANAN)
                 Row(
@@ -410,38 +398,60 @@ fun ProductCard(product: ProductWithCategory, onClick: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // SKU di Kiri
-                    Text(
+                    // SKU
+                    NativeOutlinedText(
                         text = "[${product.prdSku}]",
-                        fontSize = 8.5.sp,
-                        color = Color.White.copy(alpha = 0.85f),
-                        style = LocalTextStyle.current.copy(
-                            shadow = Shadow(
-                                color = Color.Black,
-                                offset = Offset(1f, 1f),
-                                blurRadius = 3f
-                            )
-                        )
+                        textSizeSp = 9.5f,
+                        textColor = android.graphics.Color.WHITE,
+                        outlineColor = android.graphics.Color.BLACK,
+                        strokeWidthPx = 1f, // UBAH TEBAL OUTLINE SKU DI SINI
+                        isBold = false
                     )
 
-                    // Harga di Kanan (Hijau Cerah)
-                    Text(
+                    // HARGA (HIJAU CERAH)
+                    NativeOutlinedText(
                         text = Formatters.formatRupiah(product.prdSellingPrice),
-                        fontSize = 10.5.sp,
-                        color = PriceGreen,
-                        fontWeight = FontWeight.ExtraBold,
-                        style = LocalTextStyle.current.copy(
-                            shadow = Shadow(
-                                color = Color.Black,
-                                offset = Offset(1f, 1f),
-                                blurRadius = 3f
-                            )
-                        )
+                        textSizeSp = 11.5f,
+                        textColor = android.graphics.Color.parseColor("#00E676"), // Warna Hijau
+                        outlineColor = android.graphics.Color.BLACK,
+                        strokeWidthPx = 1f, // UBAH TEBAL OUTLINE HARGA DI SINI
+                        isBold = true
                     )
                 }
             }
         }
     }
+}
+
+// Komponen Pembantu Menggunakan TextView Bawaan Android
+@Composable
+fun NativeOutlinedText(
+    text: String,
+    textSizeSp: Float,
+    textColor: Int,
+    outlineColor: Int,
+    strokeWidthPx: Float = 4f,
+    isBold: Boolean = false
+) {
+    AndroidView(
+        factory = { context ->
+            TextView(context).apply {
+                setSingleLine(true)
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+        },
+        update = { textView ->
+            textView.text = text
+            textView.textSize = textSizeSp
+            textView.setTextColor(textColor)
+            textView.paint.apply {
+                style = Paint.Style.FILL_AND_STROKE
+                strokeWidth = strokeWidthPx // Mengatur ketebalan outline bawaan Android
+                setShadowLayer(strokeWidthPx, 0f, 0f, outlineColor) // Mengatur warna outline
+                isFakeBoldText = isBold
+            }
+        }
+    )
 }
 
 @Composable
