@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pos.pik.data.local.UserWithRole
 import com.pos.pik.data.repository.PosRepository
+import com.pos.pik.ui.master.MasterCategoryViewModel
+import com.pos.pik.ui.master.MasterProductScreen
+import com.pos.pik.ui.master.MasterProductViewModel
 import com.pos.pik.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +95,12 @@ fun InventoryMainScreen(
                 NavigationBarItem(
                     selected = currentTab == 4,
                     onClick = { currentTab = 4 },
+                    label = { Text("Produk", fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Inventory2, contentDescription = null) }
+                )
+                NavigationBarItem(
+                    selected = currentTab == 5,
+                    onClick = { currentTab = 5 },
                     label = { Text("Laporan", fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Assessment, contentDescription = null) }
                 )
@@ -108,7 +117,11 @@ fun InventoryMainScreen(
                 1 -> InventoryIncomingTab(user, viewModel)
                 2 -> InventoryDamagedTab(user, viewModel)
                 3 -> InventoryInternalUseTab(user, viewModel)
-                4 -> InventoryReportTab(viewModel)
+                4 -> MasterProductScreen(
+                    productViewModel = remember { MasterProductViewModel(repository) },
+                    categoryViewModel = remember { MasterCategoryViewModel(repository) }
+                )
+                5 -> InventoryReportTab(viewModel)
             }
         }
     }

@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -92,6 +91,7 @@ fun MasterCategoryScreen(viewModel: MasterCategoryViewModel) {
     if (showFormDialog) {
         CategoryFormDialog(
             category = editingCategory,
+            existingCategories = categories,
             onDismiss = { showFormDialog = false },
             onSave = { name, subname ->
                 viewModel.saveCategory(editingCategory, name, subname)
@@ -101,15 +101,64 @@ fun MasterCategoryScreen(viewModel: MasterCategoryViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditableCategoryDropdown(
+    value: String,
+    onValueChanged: (String) -> Unit,
+    existingNames: List<String>
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val filteredNames = existingNames.filter { it.contains(value, ignoreCase = true) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && filteredNames.isNotEmpty(),
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {
+                onValueChanged(it)
+                expanded = true
+            },
+            label = { Text("Nama Kategori (Pilih atau Ketik Baru)") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        if (filteredNames.isNotEmpty()) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                filteredNames.forEach { catName ->
+                    DropdownMenuItem(
+                        text = { Text(catName) },
+                        onClick = {
+                            onValueChanged(catName)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryFormDialog(
     category: CategoryEntity?,
+    existingCategories: List<CategoryEntity>,
     onDismiss: () -> Unit,
     onSave: (name: String, subname: String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     var nameText by remember { mutableStateOf(category?.catName ?: "") }
     var subnameText by remember { mutableStateOf(category?.catSubname ?: "") }
+    val existingNames = remember(existingCategories) { existingCategories.map { it.catName }.distinct() }
 
     AlertDialog(
         onDismissRequest = {},
@@ -117,14 +166,10 @@ fun CategoryFormDialog(
         title = { Text(if (category == null) "Tambah Kategori" else "Edit Kategori") },
         text = {
             Column {
-                OutlinedTextField(
+                EditableCategoryDropdown(
                     value = nameText,
-                    onValueChange = { nameText = it },
-                    label = { Text("Nama Kategori (cth: Makanan)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChanged = { nameText = it },
+                    existingNames = existingNames
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))

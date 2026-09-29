@@ -87,6 +87,7 @@ fun MasterProductScreen(
 fun ProductListView(viewModel: MasterProductViewModel) {
     val products by viewModel.products.collectAsState()
     val mainCategories by viewModel.mainCategories.collectAsState()
+    val context = LocalContext.current
     val selectedMainCategory by viewModel.selectedMainCategory.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categories by viewModel.categories.collectAsState()
@@ -104,8 +105,12 @@ fun ProductListView(viewModel: MasterProductViewModel) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    editingProduct = null
-                    showFormDialog = true
+                    if (categories.isEmpty()) {
+                        Toast.makeText(context, "Belum ada Kategori! Silakan buat Kategori terlebih dahulu.", Toast.LENGTH_LONG).show()
+                    } else {
+                        editingProduct = null
+                        showFormDialog = true
+                    }
                 }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
@@ -117,6 +122,20 @@ fun ProductListView(viewModel: MasterProductViewModel) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            if (categories.isEmpty()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    modifier = Modifier.fillMaxWidth().padding(12.dp)
+                ) {
+                    Text(
+                        "⚠️ Belum ada Kategori! Silakan buat Kategori terlebih dahulu pada tab Kategori di bawah sebelum dapat menambah produk.",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
             // Search Bar & Filter
             Surface(color = Color.White, shadowElevation = 1.dp) {
                 Column(modifier = Modifier.padding(12.dp)) {
@@ -496,13 +515,12 @@ fun ProductFormDialog(
 
                 if (product == null) {
                     OutlinedTextField(
-                        value = skuText,
-                        onValueChange = { skuText = it },
-                        label = { Text("SKU / Barcode (Kosongkan jika otomatis)") },
-                        placeholder = { Text("Otomatis jika kosong...") },
+                        value = "Otomatis (Sesuai Kategori)",
+                        onValueChange = {},
+                        enabled = false,
+                        readOnly = true,
+                        label = { Text("SKU / Barcode (Otomatis)") },
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { dialogFocusManager.moveFocus(FocusDirection.Down) }),
                         modifier = Modifier.fillMaxWidth()
                     )
 

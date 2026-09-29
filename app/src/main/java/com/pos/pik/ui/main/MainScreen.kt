@@ -69,7 +69,6 @@ fun MainScreen(
             NavItem("POS", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart)
         )
         if (user.usrRoleId == 1) {
-            list.add(NavItem("Produk", Icons.Filled.Inventory2, Icons.Outlined.Inventory2))
             list.add(NavItem("User", Icons.Filled.People, Icons.Outlined.People))
             list.add(NavItem("Report", Icons.Filled.Assessment, Icons.Outlined.Assessment))
             list.add(NavItem("Setting", Icons.Filled.Settings, Icons.Outlined.Settings))
@@ -78,12 +77,10 @@ fun MainScreen(
     }
 
     val currentTabLabel = navItems.getOrNull(selectedTab)?.label ?: "Home"
-    val hideBottomBar = currentTabLabel == "POS" || currentTabLabel == "Produk"
+    val hideBottomBar = currentTabLabel == "POS"
 
     val homeViewModel = remember { HomeViewModel(repository) }
     val posViewModel = remember { PosViewModel(repository) }
-    val masterProductViewModel = remember { MasterProductViewModel(repository) }
-    val masterCategoryViewModel = remember { MasterCategoryViewModel(repository) }
     val masterUserViewModel = remember { MasterUserViewModel(repository) }
     val reportViewModel = remember { ReportViewModel(repository) }
     val settingsViewModel = remember { SettingsViewModel(repository) }
@@ -154,7 +151,6 @@ fun MainScreen(
             when (currentTabLabel) {
                 "Home" -> HomeScreen(user = user, viewModel = homeViewModel, onNavigateTab = { selectedTab = it })
                 "POS" -> PosScreen(user = user, viewModel = posViewModel, repository = repository)
-                "Produk" -> MasterProductScreen(productViewModel = masterProductViewModel, categoryViewModel = masterCategoryViewModel)
                 "User" -> MasterUserScreen(viewModel = masterUserViewModel)
                 "Report" -> ReportHubScreen(viewModel = reportViewModel, repository = repository)
                 "Setting" -> SettingsScreen(viewModel = settingsViewModel)
