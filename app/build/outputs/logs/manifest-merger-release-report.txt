@@ -133,7 +133,7 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\EDP\.gradle\caches
 activity#com.pos.pik.MainActivity
 ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:17:9-27:20
 	android:windowSoftInputMode
-		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:21:13-55
+		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:21:13-52
 	android:exported
 		ADDED from D:\android\POS_PIK\app\src\main\AndroidManifest.xml:19:13-36
 	android:configChanges

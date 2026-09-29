@@ -58,8 +58,8 @@
 34-->D:\android\POS_PIK\app\src\main\AndroidManifest.xml:19:13-36
 35            android:theme="@style/Theme.POSPIK"
 35-->D:\android\POS_PIK\app\src\main\AndroidManifest.xml:22:13-48
-36            android:windowSoftInputMode="adjustResize" >
-36-->D:\android\POS_PIK\app\src\main\AndroidManifest.xml:21:13-55
+36            android:windowSoftInputMode="adjustPan" >
+36-->D:\android\POS_PIK\app\src\main\AndroidManifest.xml:21:13-52
 37            <intent-filter>
 37-->D:\android\POS_PIK\app\src\main\AndroidManifest.xml:23:13-26:29
 38                <action android:name="android.intent.action.MAIN" />

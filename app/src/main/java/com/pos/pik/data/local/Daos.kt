@@ -84,7 +84,7 @@ interface ProductDao {
     """)
     fun getActiveProducts(mainCat: String?, query: String?): Flow<List<ProductWithCategory>>
 
-    @Query("SELECT MAX(prd_sku) FROM products WHERE prd_sku LIKE :prefix || '%' AND length(prd_sku) = 5")
+    @Query("SELECT MAX(prd_sku) FROM products WHERE prd_sku LIKE :prefix || '%' AND length(prd_sku) = 7")
     suspend fun getLastSkuWithPrefix(prefix: String): String?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -92,6 +92,9 @@ interface ProductDao {
 
     @Update
     suspend fun updateProduct(product: ProductEntity)
+
+    @Query("UPDATE products SET prd_cost_price = :costPrice WHERE prd_sku = :sku")
+    suspend fun updateProductCostPrice(sku: String, costPrice: Double)
 
     @Query("DELETE FROM products WHERE prd_sku = :sku")
     suspend fun deleteProductBySku(sku: String)
@@ -170,8 +173,11 @@ interface SaleDao {
     suspend fun getSaleItemsByInvoice(invoiceNumber: String): List<SaleItemWithProduct>
 
     @Query("""
-        SELECT DATE(sls_transaction_date) as date, COUNT(*) as total_invoices, SUM(sls_grand_total) as total_revenue,
-        SUM((SELECT SUM(itm_quantity * itm_cost_price) FROM sale_items WHERE itm_sale_id = sls_invoice_number)) as total_cost
+        SELECT DATE(sls_transaction_date) as date,
+        COUNT(*) as total_invoices,
+        SUM(sls_grand_total) as total_revenue,
+        SUM((SELECT SUM(itm_quantity * itm_cost_price) FROM sale_items WHERE itm_sale_id = sls_invoice_number)) as total_cost,
+        COALESCE(SUM((SELECT SUM(itm_quantity) FROM sale_items WHERE itm_sale_id = sls_invoice_number)), 0) as total_qty
         FROM sales 
         WHERE DATE(sls_transaction_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
         GROUP BY DATE(sls_transaction_date) 
@@ -242,8 +248,22 @@ interface SaleDao {
     @Query("SELECT COUNT(*) FROM sales WHERE DATE(sls_transaction_date) = DATE(:today)")
     suspend fun getTodayCount(today: String): Int
 
+    @Query("SELECT COUNT(*) FROM sales WHERE DATE(sls_transaction_date) = DATE(:today)")
+    fun getTodayCountFlow(today: String): Flow<Int>
+
     @Query("SELECT COALESCE(SUM(sls_grand_total), 0.0) FROM sales WHERE DATE(sls_transaction_date) = DATE(:today)")
     suspend fun getTodayOmzet(today: String): Double
+
+    @Query("SELECT COALESCE(SUM(sls_grand_total), 0.0) FROM sales WHERE DATE(sls_transaction_date) = DATE(:today)")
+    fun getTodayOmzetFlow(today: String): Flow<Double>
+
+    @Query("""
+        SELECT COALESCE(SUM(si.itm_quantity), 0)
+        FROM sale_items si
+        JOIN sales s ON si.itm_sale_id = s.sls_invoice_number
+        WHERE si.itm_sku = :sku AND strftime('%Y', s.sls_transaction_date) = CAST(:year AS TEXT)
+    """)
+    suspend fun getTotalSalesQtyForSku(sku: String, year: Int): Int
 }
 
 @Dao
@@ -272,4 +292,104 @@ interface AppSettingDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateSettings(setting: AppSettingEntity)
+}
+
+// --- INVENTORY DAOS ---
+
+@Dao
+interface MasterStockDao {
+    @Query("""
+        SELECT s.*, p.prd_name, p.prd_cost_price, p.prd_selling_price, c.cat_name
+        FROM master_stock s
+        JOIN products p ON s.st_prd_sku = p.prd_sku
+        JOIN categories c ON p.prd_category_id = c.cat_id
+        WHERE s.st_year = :year
+          AND (:query IS NULL OR :query = '' OR p.prd_name LIKE '%' || :query || '%' OR p.prd_sku LIKE '%' || :query || '%')
+        ORDER BY p.prd_name ASC
+    """)
+    fun getMasterStockByYear(year: Int, query: String? = null): Flow<List<MasterStockWithProduct>>
+
+    @Query("SELECT * FROM master_stock WHERE st_prd_sku = :sku AND st_year = :year LIMIT 1")
+    suspend fun getStockBySkuAndYear(sku: String, year: Int): MasterStockEntity?
+
+    @Query("SELECT * FROM master_stock WHERE st_year = :year")
+    suspend fun getAllStockByYear(year: Int): List<MasterStockEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStock(stock: MasterStockEntity)
+
+    @Update
+    suspend fun updateStock(stock: MasterStockEntity)
+
+    @Query("DELETE FROM master_stock WHERE st_year = :year")
+    suspend fun deleteStockByYear(year: Int)
+}
+
+@Dao
+interface InventoryIncomingDao {
+    @Query("""
+        SELECT i.*, p.prd_name, u.usr_name
+        FROM inventory_incoming i
+        JOIN products p ON i.inc_prd_sku = p.prd_sku
+        JOIN users u ON i.inc_user_id = u.usr_id
+        WHERE DATE(i.inc_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
+        ORDER BY i.inc_date DESC
+    """)
+    fun getIncomingHistory(startDate: String, endDate: String): Flow<List<InventoryIncomingWithDetails>>
+
+    @Query("""
+        SELECT COALESCE(SUM(inc_total_qty), 0)
+        FROM inventory_incoming
+        WHERE inc_prd_sku = :sku AND strftime('%Y', inc_date) = CAST(:year AS TEXT)
+    """)
+    suspend fun getTotalIncomingQty(sku: String, year: Int): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertIncoming(incoming: InventoryIncomingEntity): Long
+}
+
+@Dao
+interface InventoryDamagedDao {
+    @Query("""
+        SELECT d.*, p.prd_name, u.usr_name
+        FROM inventory_damaged d
+        JOIN products p ON d.dmg_prd_sku = p.prd_sku
+        JOIN users u ON d.dmg_user_id = u.usr_id
+        WHERE DATE(d.dmg_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
+        ORDER BY d.dmg_date DESC
+    """)
+    fun getDamagedHistory(startDate: String, endDate: String): Flow<List<InventoryDamagedWithDetails>>
+
+    @Query("""
+        SELECT COALESCE(SUM(dmg_qty), 0)
+        FROM inventory_damaged
+        WHERE dmg_prd_sku = :sku AND strftime('%Y', dmg_date) = CAST(:year AS TEXT)
+    """)
+    suspend fun getTotalDamagedQty(sku: String, year: Int): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDamaged(damaged: InventoryDamagedEntity): Long
+}
+
+@Dao
+interface InventoryInternalUseDao {
+    @Query("""
+        SELECT u.*, p.prd_name, us.usr_name
+        FROM inventory_internal_use u
+        JOIN products p ON u.use_prd_sku = p.prd_sku
+        JOIN users us ON u.use_user_id = us.usr_id
+        WHERE DATE(u.use_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
+        ORDER BY u.use_date DESC
+    """)
+    fun getInternalUseHistory(startDate: String, endDate: String): Flow<List<InventoryInternalUseWithDetails>>
+
+    @Query("""
+        SELECT COALESCE(SUM(use_qty), 0)
+        FROM inventory_internal_use
+        WHERE use_prd_sku = :sku AND strftime('%Y', use_date) = CAST(:year AS TEXT)
+    """)
+    suspend fun getTotalInternalUseQty(sku: String, year: Int): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertInternalUse(internalUse: InventoryInternalUseEntity): Long
 }

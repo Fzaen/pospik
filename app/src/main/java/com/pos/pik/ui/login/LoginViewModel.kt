@@ -9,10 +9,12 @@ import com.pos.pik.data.repository.PosRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+enum class AppMode { POS, INVENTORY }
+
 sealed interface LoginUiState {
     object Idle : LoginUiState
     object Loading : LoginUiState
-    data class Success(val user: UserWithRole) : LoginUiState
+    data class Success(val user: UserWithRole, val mode: AppMode, val timestamp: Long = System.currentTimeMillis()) : LoginUiState
     data class Error(val message: String) : LoginUiState
 }
 
@@ -20,6 +22,7 @@ class LoginViewModel(private val repository: PosRepository) : ViewModel() {
 
     var usernameState = MutableStateFlow("admin")
     var passwordState = MutableStateFlow("123")
+    var selectedModeState = MutableStateFlow(AppMode.POS)
 
     val settings: StateFlow<AppSettingEntity?> = repository.getSettings()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -30,6 +33,7 @@ class LoginViewModel(private val repository: PosRepository) : ViewModel() {
     fun login() {
         val username = usernameState.value.trim()
         val password = passwordState.value.trim()
+        val targetMode = selectedModeState.value
 
         if (username.isEmpty() || password.isEmpty()) {
             _uiState.value = LoginUiState.Error("Username dan password tidak boleh kosong")
@@ -41,7 +45,22 @@ class LoginViewModel(private val repository: PosRepository) : ViewModel() {
             try {
                 val user = repository.login(username, password)
                 if (user != null) {
-                    _uiState.value = LoginUiState.Success(user)
+                    val roleName = user.rolName.lowercase()
+                    val isAdmin = roleName.contains("admin")
+                    val isKasir = roleName.contains("kasir")
+                    val isLogistik = roleName.contains("logistik")
+
+                    if (targetMode == AppMode.INVENTORY && isKasir && !isAdmin) {
+                        _uiState.value = LoginUiState.Error("Akses Ditolak! Role Kasir tidak dapat mengakses Inventory Gudang.")
+                        return@launch
+                    }
+
+                    if (targetMode == AppMode.POS && isLogistik && !isAdmin) {
+                        _uiState.value = LoginUiState.Error("Akses Ditolak! Role Logistik tidak dapat mengakses POS Kasir.")
+                        return@launch
+                    }
+
+                    _uiState.value = LoginUiState.Success(user, targetMode)
                 } else {
                     _uiState.value = LoginUiState.Error("Login Gagal! Username atau Password salah.")
                 }

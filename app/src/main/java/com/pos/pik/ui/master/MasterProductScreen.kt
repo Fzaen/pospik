@@ -1,5 +1,6 @@
 package com.pos.pik.ui.master
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -9,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,8 +29,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,6 +42,7 @@ import coil.compose.AsyncImage
 import com.pos.pik.data.local.CategoryEntity
 import com.pos.pik.data.local.ProductWithCategory
 import com.pos.pik.util.Formatters
+import com.pos.pik.util.ImageUtils
 
 @Composable
 fun MasterProductScreen(
@@ -84,6 +90,7 @@ fun ProductListView(viewModel: MasterProductViewModel) {
     val selectedMainCategory by viewModel.selectedMainCategory.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     var showFormDialog by remember { mutableStateOf(false) }
     var editingProduct by remember { mutableStateOf<ProductWithCategory?>(null) }
@@ -126,6 +133,8 @@ fun ProductListView(viewModel: MasterProductViewModel) {
                             }
                         },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -211,7 +220,8 @@ fun ProductListView(viewModel: MasterProductViewModel) {
     if (deletingProduct != null) {
         val prod = deletingProduct!!
         AlertDialog(
-            onDismissRequest = { deletingProduct = null },
+            onDismissRequest = {},
+            properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             title = { Text("Konfirmasi Hapus Produk") },
             text = { Text("Apakah Anda yakin ingin menghapus produk \"${prod.prdName}\"? Data dan foto produk akan terhapus.") },
             confirmButton = {
@@ -236,7 +246,8 @@ fun ProductListView(viewModel: MasterProductViewModel) {
     // Confirm Delete All Products Dialog (Admin Password Required)
     if (showDeleteAllDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteAllDialog = false },
+            onDismissRequest = {},
+            properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             title = { Text("Hapus Semua Produk") },
             text = {
                 Column {
@@ -361,6 +372,8 @@ fun ProductFormDialog(
     onDismiss: () -> Unit,
     onSave: (catId: Int, customSku: String?, name: String, cost: Double, sell: Double, image: String?) -> Unit
 ) {
+    val context = LocalContext.current
+    val dialogFocusManager = LocalFocusManager.current
     var selectedCatId by remember { mutableStateOf(product?.prdCategoryId ?: categories.firstOrNull()?.catId ?: 0) }
     var skuText by remember { mutableStateOf(product?.prdSku ?: "") }
     var nameText by remember { mutableStateOf(product?.prdName ?: "") }
@@ -368,38 +381,25 @@ fun ProductFormDialog(
     var sellText by remember { mutableStateOf(product?.prdSellingPrice?.toInt()?.toString() ?: "") }
     var imageText by remember { mutableStateOf(product?.prdImage ?: "") }
     var expandedCat by remember { mutableStateOf(false) }
-    var expandedAssets by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            imageText = uri.toString()
+            val (savedPath, errorMsg) = ImageUtils.saveImageToInternalStorage(context, uri)
+            if (savedPath != null) {
+                imageText = savedPath
+            } else if (errorMsg != null) {
+                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+            }
         }
     }
 
-    val builtInAssets = listOf(
-        Pair("-- Pilih Gambar Offline (Assets) --", ""),
-        Pair("Soto Banjar (Soto_Banjar.jpg)", "file:///android_asset/img/Soto_Banjar.jpg"),
-        Pair("Nasi Sop Banjar (nasi_sop_Banjar.jpg)", "file:///android_asset/img/nasi_sop_Banjar.jpg"),
-        Pair("Rawon Banjar (rawon_banjar.jpg)", "file:///android_asset/img/rawon_banjar.jpg"),
-        Pair("Sate Banjar (sate_banjar.jpg)", "file:///android_asset/img/sate_banjar.jpg"),
-        Pair("Es Teh (es_teh.jpeg)", "file:///android_asset/img/es_teh.jpeg"),
-        Pair("Es Jeruk (es_jeruk.jpeg)", "file:///android_asset/img/es_jeruk.jpeg"),
-        Pair("Air Es (air_es.jpeg)", "file:///android_asset/img/air_es.jpeg"),
-        Pair("Air Putih (air_putih.jpeg)", "file:///android_asset/img/air_putih.jpeg"),
-        Pair("Le Minerale (leminerale_600ml.jpeg)", "file:///android_asset/img/leminerale_600ml.jpeg"),
-        Pair("Prof 600ml (prof_600ml.jpeg)", "file:///android_asset/img/prof_600ml.jpeg"),
-        Pair("Sirup (sirup.jpeg)", "file:///android_asset/img/sirup.jpeg"),
-        Pair("Kerupuk Udang (kerupuk_udang.jpeg)", "file:///android_asset/img/kerupuk_udang.jpeg"),
-        Pair("Kacang Putih (kacang_putih.jpeg)", "file:///android_asset/img/kacang_putih.jpeg")
-    )
-
     val selectedCat = categories.find { it.catId == selectedCatId }
-    val currentAssetLabel = builtInAssets.find { it.second == imageText }?.first ?: "Gambar Kustom / Dari Galeri"
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         title = { Text(if (product == null) "Tambah Produk" else "Edit Produk") },
         text = {
             Column(
@@ -459,41 +459,6 @@ fun ProductFormDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Built-in Assets Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = expandedAssets,
-                    onExpandedChange = { expandedAssets = !expandedAssets }
-                ) {
-                    OutlinedTextField(
-                        value = currentAssetLabel,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Pilih Gambar Bawaan (Offline Assets)") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedAssets) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedAssets,
-                        onDismissRequest = { expandedAssets = false }
-                    ) {
-                        builtInAssets.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(item.first, fontSize = 13.sp) },
-                                onClick = {
-                                    if (item.second.isNotBlank()) {
-                                        imageText = item.second
-                                    }
-                                    expandedAssets = false
-                                }
-                            )
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Category Dropdown
@@ -536,6 +501,8 @@ fun ProductFormDialog(
                         label = { Text("SKU / Barcode (Kosongkan jika otomatis)") },
                         placeholder = { Text("Otomatis jika kosong...") },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { dialogFocusManager.moveFocus(FocusDirection.Down) }),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -547,6 +514,8 @@ fun ProductFormDialog(
                     onValueChange = { nameText = it },
                     label = { Text("Nama Produk") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { dialogFocusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -557,7 +526,8 @@ fun ProductFormDialog(
                     onValueChange = { costText = it.filter { c -> c.isDigit() } },
                     label = { Text("HPP / Modal (Rp)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { dialogFocusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -568,7 +538,8 @@ fun ProductFormDialog(
                     onValueChange = { sellText = it.filter { c -> c.isDigit() } },
                     label = { Text("Harga Jual (Rp)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { dialogFocusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

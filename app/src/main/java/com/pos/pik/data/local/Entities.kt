@@ -194,7 +194,8 @@ data class ProfitReportRow(
     val date: String,
     @ColumnInfo(name = "total_invoices") val totalInvoices: Int,
     @ColumnInfo(name = "total_revenue") val totalRevenue: Double,
-    @ColumnInfo(name = "total_cost") val totalCost: Double
+    @ColumnInfo(name = "total_cost") val totalCost: Double,
+    @ColumnInfo(name = "total_qty") val totalQty: Int = 0
 )
 
 data class ItemSalesReportRow(
@@ -233,4 +234,112 @@ data class SubCategorySalesReportRow(
 data class TodayStats(
     val count: Int,
     val omzet: Double
+)
+
+// --- INVENTORY / GUDANG ENTITIES ---
+
+@Entity(tableName = "master_stock")
+data class MasterStockEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "st_id") val stId: Int = 0,
+    @ColumnInfo(name = "st_prd_sku") val stPrdSku: String,
+    @ColumnInfo(name = "st_year") val stYear: Int = SimpleDateFormat("yyyy", Locale.getDefault()).format(Date()).toInt(),
+    @ColumnInfo(name = "st_initial_qty") val stInitialQty: Int = 0,
+    @ColumnInfo(name = "st_incoming_qty") val stIncomingQty: Int = 0,
+    @ColumnInfo(name = "st_sales_qty") val stSalesQty: Int = 0,
+    @ColumnInfo(name = "st_damaged_qty") val stDamagedQty: Int = 0,
+    @ColumnInfo(name = "st_internal_use_qty") val stInternalUseQty: Int = 0,
+    @ColumnInfo(name = "st_final_qty") val stFinalQty: Int = 0,
+    @ColumnInfo(name = "st_last_updated") val stLastUpdated: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+)
+
+data class MasterStockWithProduct(
+    @ColumnInfo(name = "st_id") val stId: Int,
+    @ColumnInfo(name = "st_prd_sku") val stPrdSku: String,
+    @ColumnInfo(name = "st_year") val stYear: Int,
+    @ColumnInfo(name = "st_initial_qty") val stInitialQty: Int,
+    @ColumnInfo(name = "st_incoming_qty") val stIncomingQty: Int,
+    @ColumnInfo(name = "st_sales_qty") val stSalesQty: Int,
+    @ColumnInfo(name = "st_damaged_qty") val stDamagedQty: Int,
+    @ColumnInfo(name = "st_internal_use_qty") val stInternalUseQty: Int,
+    @ColumnInfo(name = "st_final_qty") val stFinalQty: Int,
+    @ColumnInfo(name = "st_last_updated") val stLastUpdated: String,
+    @ColumnInfo(name = "prd_name") val prdName: String,
+    @ColumnInfo(name = "prd_cost_price") val prdCostPrice: Double,
+    @ColumnInfo(name = "prd_selling_price") val prdSellingPrice: Double,
+    @ColumnInfo(name = "cat_name") val catName: String
+)
+
+@Entity(tableName = "inventory_incoming")
+data class InventoryIncomingEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "inc_id") val incId: Int = 0,
+    @ColumnInfo(name = "inc_date") val incDate: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()),
+    @ColumnInfo(name = "inc_user_id") val incUserId: Int,
+    @ColumnInfo(name = "inc_prd_sku") val incPrdSku: String,
+    @ColumnInfo(name = "inc_package_qty") val incPackageQty: Int,
+    @ColumnInfo(name = "inc_fraction") val incFraction: Int = 1,
+    @ColumnInfo(name = "inc_total_qty") val incTotalQty: Int,
+    @ColumnInfo(name = "inc_total_cost") val incTotalCost: Double,
+    @ColumnInfo(name = "inc_unit_cost") val incUnitCost: Double,
+    @ColumnInfo(name = "inc_note") val incNote: String? = null
+)
+
+data class InventoryIncomingWithDetails(
+    @ColumnInfo(name = "inc_id") val incId: Int,
+    @ColumnInfo(name = "inc_date") val incDate: String,
+    @ColumnInfo(name = "inc_user_id") val incUserId: Int,
+    @ColumnInfo(name = "inc_prd_sku") val incPrdSku: String,
+    @ColumnInfo(name = "inc_package_qty") val incPackageQty: Int,
+    @ColumnInfo(name = "inc_fraction") val incFraction: Int,
+    @ColumnInfo(name = "inc_total_qty") val incTotalQty: Int,
+    @ColumnInfo(name = "inc_total_cost") val incTotalCost: Double,
+    @ColumnInfo(name = "inc_unit_cost") val incUnitCost: Double,
+    @ColumnInfo(name = "inc_note") val incNote: String?,
+    @ColumnInfo(name = "prd_name") val prdName: String,
+    @ColumnInfo(name = "usr_name") val usrName: String
+)
+
+@Entity(tableName = "inventory_damaged")
+data class InventoryDamagedEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "dmg_id") val dmgId: Int = 0,
+    @ColumnInfo(name = "dmg_date") val dmgDate: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()),
+    @ColumnInfo(name = "dmg_user_id") val dmgUserId: Int,
+    @ColumnInfo(name = "dmg_prd_sku") val dmgPrdSku: String,
+    @ColumnInfo(name = "dmg_qty") val dmgQty: Int,
+    @ColumnInfo(name = "dmg_reason") val dmgReason: String? = null
+)
+
+data class InventoryDamagedWithDetails(
+    @ColumnInfo(name = "dmg_id") val dmgId: Int,
+    @ColumnInfo(name = "dmg_date") val dmgDate: String,
+    @ColumnInfo(name = "dmg_user_id") val dmgUserId: Int,
+    @ColumnInfo(name = "dmg_prd_sku") val dmgPrdSku: String,
+    @ColumnInfo(name = "dmg_qty") val dmgQty: Int,
+    @ColumnInfo(name = "dmg_reason") val dmgReason: String?,
+    @ColumnInfo(name = "prd_name") val prdName: String,
+    @ColumnInfo(name = "usr_name") val usrName: String
+)
+
+@Entity(tableName = "inventory_internal_use")
+data class InventoryInternalUseEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "use_id") val useId: Int = 0,
+    @ColumnInfo(name = "use_date") val useDate: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()),
+    @ColumnInfo(name = "use_user_id") val useUserId: Int,
+    @ColumnInfo(name = "use_prd_sku") val usePrdSku: String,
+    @ColumnInfo(name = "use_qty") val useQty: Int,
+    @ColumnInfo(name = "use_note") val useNote: String? = null
+)
+
+data class InventoryInternalUseWithDetails(
+    @ColumnInfo(name = "use_id") val useId: Int,
+    @ColumnInfo(name = "use_date") val useDate: String,
+    @ColumnInfo(name = "use_user_id") val useUserId: Int,
+    @ColumnInfo(name = "use_prd_sku") val usePrdSku: String,
+    @ColumnInfo(name = "use_qty") val useQty: Int,
+    @ColumnInfo(name = "use_note") val useNote: String?,
+    @ColumnInfo(name = "prd_name") val prdName: String,
+    @ColumnInfo(name = "usr_name") val usrName: String
 )

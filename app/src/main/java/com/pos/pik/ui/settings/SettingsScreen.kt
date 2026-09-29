@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,9 +20,12 @@ import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +35,7 @@ import com.pos.pik.util.DatabaseBackupUtil
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val currentSettings by viewModel.settings.collectAsState()
 
     var nameText by remember { mutableStateOf("") }
@@ -75,6 +80,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             label = { Text("Nama Warung") },
             leadingIcon = { Icon(Icons.Default.Storefront, contentDescription = null) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -86,6 +93,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             label = { Text("Alamat") },
             leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -97,6 +106,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             label = { Text("No. Telp") },
             leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -137,7 +148,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 onValueChange = { marginText = it },
                 label = { Text("Margin (mm)") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -180,7 +192,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         if (selectedRestoreUri != null) {
             val restoreUri = selectedRestoreUri!!
             AlertDialog(
-                onDismissRequest = { selectedRestoreUri = null },
+                onDismissRequest = {},
+                properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
                 title = { Text("Konfirmasi Restore Database") },
                 text = { Text("PERINGATAN: Seluruh data saat ini akan diganti dengan data dari file backup SQLite yang dipilih. Lanjutkan?") },
                 confirmButton = {

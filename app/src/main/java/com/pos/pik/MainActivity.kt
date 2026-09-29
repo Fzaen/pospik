@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pos.pik.ui.inventory.InventoryMainScreen
+import com.pos.pik.ui.login.AppMode
 import com.pos.pik.ui.login.LoginScreen
 import com.pos.pik.ui.login.LoginViewModel
 import com.pos.pik.ui.main.MainScreen
@@ -21,6 +23,7 @@ class MainActivity : ComponentActivity() {
             POSPIKTheme {
                 val mainViewModel: MainViewModel = viewModel()
                 val currentUser by mainViewModel.currentUser.collectAsState()
+                val currentMode by mainViewModel.currentMode.collectAsState()
 
                 if (currentUser == null) {
                     val loginViewModel: LoginViewModel = viewModel(
@@ -28,18 +31,28 @@ class MainActivity : ComponentActivity() {
                     )
                     LoginScreen(
                         viewModel = loginViewModel,
-                        onLoginSuccess = { user ->
-                            mainViewModel.setCurrentUser(user)
+                        onLoginSuccess = { user, mode ->
+                            mainViewModel.setCurrentSession(user, mode)
                         }
                     )
                 } else {
-                    MainScreen(
-                        user = currentUser!!,
-                        repository = repository,
-                        onLogout = {
-                            mainViewModel.setCurrentUser(null)
-                        }
-                    )
+                    if (currentMode == AppMode.INVENTORY) {
+                        InventoryMainScreen(
+                            user = currentUser!!,
+                            repository = repository,
+                            onLogout = {
+                                mainViewModel.setCurrentSession(null)
+                            }
+                        )
+                    } else {
+                        MainScreen(
+                            user = currentUser!!,
+                            repository = repository,
+                            onLogout = {
+                                mainViewModel.setCurrentSession(null)
+                            }
+                        )
+                    }
                 }
             }
         }

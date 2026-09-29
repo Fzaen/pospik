@@ -42,10 +42,18 @@ public final class AppDatabase_Impl extends AppDatabase {
 
   private volatile AppSettingDao _appSettingDao;
 
+  private volatile MasterStockDao _masterStockDao;
+
+  private volatile InventoryIncomingDao _inventoryIncomingDao;
+
+  private volatile InventoryDamagedDao _inventoryDamagedDao;
+
+  private volatile InventoryInternalUseDao _inventoryInternalUseDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(1) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(2) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `roles` (`rol_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `rol_name` TEXT NOT NULL)");
@@ -57,8 +65,12 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `sale_items` (`itm_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `itm_sale_id` TEXT NOT NULL, `itm_sku` TEXT NOT NULL, `itm_discount` REAL NOT NULL, `itm_cashback` REAL NOT NULL, `itm_quantity` INTEGER NOT NULL, `itm_unit_price` REAL NOT NULL, `itm_cost_price` REAL NOT NULL, `itm_subtotal` REAL NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `pos_logs` (`log_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `log_user_id` INTEGER NOT NULL, `log_prd_sku` TEXT NOT NULL, `log_action` TEXT NOT NULL, `log_old_qty` INTEGER NOT NULL, `log_new_qty` INTEGER NOT NULL, `log_description` TEXT, `log_timestamp` TEXT NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `app_settings` (`set_id` INTEGER NOT NULL, `set_warung_name` TEXT NOT NULL, `set_address` TEXT NOT NULL, `set_phone` TEXT NOT NULL, `set_default_printer` TEXT, `set_paper_size` INTEGER NOT NULL, `set_margin` REAL NOT NULL, PRIMARY KEY(`set_id`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `master_stock` (`st_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `st_prd_sku` TEXT NOT NULL, `st_year` INTEGER NOT NULL, `st_initial_qty` INTEGER NOT NULL, `st_incoming_qty` INTEGER NOT NULL, `st_sales_qty` INTEGER NOT NULL, `st_damaged_qty` INTEGER NOT NULL, `st_internal_use_qty` INTEGER NOT NULL, `st_final_qty` INTEGER NOT NULL, `st_last_updated` TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `inventory_incoming` (`inc_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `inc_date` TEXT NOT NULL, `inc_user_id` INTEGER NOT NULL, `inc_prd_sku` TEXT NOT NULL, `inc_package_qty` INTEGER NOT NULL, `inc_fraction` INTEGER NOT NULL, `inc_total_qty` INTEGER NOT NULL, `inc_total_cost` REAL NOT NULL, `inc_unit_cost` REAL NOT NULL, `inc_note` TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `inventory_damaged` (`dmg_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dmg_date` TEXT NOT NULL, `dmg_user_id` INTEGER NOT NULL, `dmg_prd_sku` TEXT NOT NULL, `dmg_qty` INTEGER NOT NULL, `dmg_reason` TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `inventory_internal_use` (`use_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `use_date` TEXT NOT NULL, `use_user_id` INTEGER NOT NULL, `use_prd_sku` TEXT NOT NULL, `use_qty` INTEGER NOT NULL, `use_note` TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '59d69c44c22241435c5bd1617a0dd31e')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '51d968aacbbf3aa3b3ba9ac2fd5ef98e')");
       }
 
       @Override
@@ -72,6 +84,10 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `sale_items`");
         db.execSQL("DROP TABLE IF EXISTS `pos_logs`");
         db.execSQL("DROP TABLE IF EXISTS `app_settings`");
+        db.execSQL("DROP TABLE IF EXISTS `master_stock`");
+        db.execSQL("DROP TABLE IF EXISTS `inventory_incoming`");
+        db.execSQL("DROP TABLE IF EXISTS `inventory_damaged`");
+        db.execSQL("DROP TABLE IF EXISTS `inventory_internal_use`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -266,9 +282,81 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoAppSettings + "\n"
                   + " Found:\n" + _existingAppSettings);
         }
+        final HashMap<String, TableInfo.Column> _columnsMasterStock = new HashMap<String, TableInfo.Column>(10);
+        _columnsMasterStock.put("st_id", new TableInfo.Column("st_id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_prd_sku", new TableInfo.Column("st_prd_sku", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_year", new TableInfo.Column("st_year", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_initial_qty", new TableInfo.Column("st_initial_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_incoming_qty", new TableInfo.Column("st_incoming_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_sales_qty", new TableInfo.Column("st_sales_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_damaged_qty", new TableInfo.Column("st_damaged_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_internal_use_qty", new TableInfo.Column("st_internal_use_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_final_qty", new TableInfo.Column("st_final_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsMasterStock.put("st_last_updated", new TableInfo.Column("st_last_updated", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysMasterStock = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesMasterStock = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoMasterStock = new TableInfo("master_stock", _columnsMasterStock, _foreignKeysMasterStock, _indicesMasterStock);
+        final TableInfo _existingMasterStock = TableInfo.read(db, "master_stock");
+        if (!_infoMasterStock.equals(_existingMasterStock)) {
+          return new RoomOpenHelper.ValidationResult(false, "master_stock(com.pos.pik.data.local.MasterStockEntity).\n"
+                  + " Expected:\n" + _infoMasterStock + "\n"
+                  + " Found:\n" + _existingMasterStock);
+        }
+        final HashMap<String, TableInfo.Column> _columnsInventoryIncoming = new HashMap<String, TableInfo.Column>(10);
+        _columnsInventoryIncoming.put("inc_id", new TableInfo.Column("inc_id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_date", new TableInfo.Column("inc_date", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_user_id", new TableInfo.Column("inc_user_id", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_prd_sku", new TableInfo.Column("inc_prd_sku", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_package_qty", new TableInfo.Column("inc_package_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_fraction", new TableInfo.Column("inc_fraction", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_total_qty", new TableInfo.Column("inc_total_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_total_cost", new TableInfo.Column("inc_total_cost", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_unit_cost", new TableInfo.Column("inc_unit_cost", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryIncoming.put("inc_note", new TableInfo.Column("inc_note", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysInventoryIncoming = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesInventoryIncoming = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoInventoryIncoming = new TableInfo("inventory_incoming", _columnsInventoryIncoming, _foreignKeysInventoryIncoming, _indicesInventoryIncoming);
+        final TableInfo _existingInventoryIncoming = TableInfo.read(db, "inventory_incoming");
+        if (!_infoInventoryIncoming.equals(_existingInventoryIncoming)) {
+          return new RoomOpenHelper.ValidationResult(false, "inventory_incoming(com.pos.pik.data.local.InventoryIncomingEntity).\n"
+                  + " Expected:\n" + _infoInventoryIncoming + "\n"
+                  + " Found:\n" + _existingInventoryIncoming);
+        }
+        final HashMap<String, TableInfo.Column> _columnsInventoryDamaged = new HashMap<String, TableInfo.Column>(6);
+        _columnsInventoryDamaged.put("dmg_id", new TableInfo.Column("dmg_id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryDamaged.put("dmg_date", new TableInfo.Column("dmg_date", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryDamaged.put("dmg_user_id", new TableInfo.Column("dmg_user_id", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryDamaged.put("dmg_prd_sku", new TableInfo.Column("dmg_prd_sku", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryDamaged.put("dmg_qty", new TableInfo.Column("dmg_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryDamaged.put("dmg_reason", new TableInfo.Column("dmg_reason", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysInventoryDamaged = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesInventoryDamaged = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoInventoryDamaged = new TableInfo("inventory_damaged", _columnsInventoryDamaged, _foreignKeysInventoryDamaged, _indicesInventoryDamaged);
+        final TableInfo _existingInventoryDamaged = TableInfo.read(db, "inventory_damaged");
+        if (!_infoInventoryDamaged.equals(_existingInventoryDamaged)) {
+          return new RoomOpenHelper.ValidationResult(false, "inventory_damaged(com.pos.pik.data.local.InventoryDamagedEntity).\n"
+                  + " Expected:\n" + _infoInventoryDamaged + "\n"
+                  + " Found:\n" + _existingInventoryDamaged);
+        }
+        final HashMap<String, TableInfo.Column> _columnsInventoryInternalUse = new HashMap<String, TableInfo.Column>(6);
+        _columnsInventoryInternalUse.put("use_id", new TableInfo.Column("use_id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryInternalUse.put("use_date", new TableInfo.Column("use_date", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryInternalUse.put("use_user_id", new TableInfo.Column("use_user_id", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryInternalUse.put("use_prd_sku", new TableInfo.Column("use_prd_sku", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryInternalUse.put("use_qty", new TableInfo.Column("use_qty", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsInventoryInternalUse.put("use_note", new TableInfo.Column("use_note", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysInventoryInternalUse = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesInventoryInternalUse = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoInventoryInternalUse = new TableInfo("inventory_internal_use", _columnsInventoryInternalUse, _foreignKeysInventoryInternalUse, _indicesInventoryInternalUse);
+        final TableInfo _existingInventoryInternalUse = TableInfo.read(db, "inventory_internal_use");
+        if (!_infoInventoryInternalUse.equals(_existingInventoryInternalUse)) {
+          return new RoomOpenHelper.ValidationResult(false, "inventory_internal_use(com.pos.pik.data.local.InventoryInternalUseEntity).\n"
+                  + " Expected:\n" + _infoInventoryInternalUse + "\n"
+                  + " Found:\n" + _existingInventoryInternalUse);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "59d69c44c22241435c5bd1617a0dd31e", "9c1629968569a0ec2f709f7541f0f3d2");
+    }, "51d968aacbbf3aa3b3ba9ac2fd5ef98e", "12d8489f2eb11bb59ec4951cb9ec5b8e");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -279,7 +367,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "roles","users","categories","products","pos_cart","sales","sale_items","pos_logs","app_settings");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "roles","users","categories","products","pos_cart","sales","sale_items","pos_logs","app_settings","master_stock","inventory_incoming","inventory_damaged","inventory_internal_use");
   }
 
   @Override
@@ -297,6 +385,10 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `sale_items`");
       _db.execSQL("DELETE FROM `pos_logs`");
       _db.execSQL("DELETE FROM `app_settings`");
+      _db.execSQL("DELETE FROM `master_stock`");
+      _db.execSQL("DELETE FROM `inventory_incoming`");
+      _db.execSQL("DELETE FROM `inventory_damaged`");
+      _db.execSQL("DELETE FROM `inventory_internal_use`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -319,6 +411,10 @@ public final class AppDatabase_Impl extends AppDatabase {
     _typeConvertersMap.put(SaleDao.class, SaleDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(PosLogDao.class, PosLogDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(AppSettingDao.class, AppSettingDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(MasterStockDao.class, MasterStockDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(InventoryIncomingDao.class, InventoryIncomingDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(InventoryDamagedDao.class, InventoryDamagedDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(InventoryInternalUseDao.class, InventoryInternalUseDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -445,6 +541,62 @@ public final class AppDatabase_Impl extends AppDatabase {
           _appSettingDao = new AppSettingDao_Impl(this);
         }
         return _appSettingDao;
+      }
+    }
+  }
+
+  @Override
+  public MasterStockDao masterStockDao() {
+    if (_masterStockDao != null) {
+      return _masterStockDao;
+    } else {
+      synchronized(this) {
+        if(_masterStockDao == null) {
+          _masterStockDao = new MasterStockDao_Impl(this);
+        }
+        return _masterStockDao;
+      }
+    }
+  }
+
+  @Override
+  public InventoryIncomingDao inventoryIncomingDao() {
+    if (_inventoryIncomingDao != null) {
+      return _inventoryIncomingDao;
+    } else {
+      synchronized(this) {
+        if(_inventoryIncomingDao == null) {
+          _inventoryIncomingDao = new InventoryIncomingDao_Impl(this);
+        }
+        return _inventoryIncomingDao;
+      }
+    }
+  }
+
+  @Override
+  public InventoryDamagedDao inventoryDamagedDao() {
+    if (_inventoryDamagedDao != null) {
+      return _inventoryDamagedDao;
+    } else {
+      synchronized(this) {
+        if(_inventoryDamagedDao == null) {
+          _inventoryDamagedDao = new InventoryDamagedDao_Impl(this);
+        }
+        return _inventoryDamagedDao;
+      }
+    }
+  }
+
+  @Override
+  public InventoryInternalUseDao inventoryInternalUseDao() {
+    if (_inventoryInternalUseDao != null) {
+      return _inventoryInternalUseDao;
+    } else {
+      synchronized(this) {
+        if(_inventoryInternalUseDao == null) {
+          _inventoryInternalUseDao = new InventoryInternalUseDao_Impl(this);
+        }
+        return _inventoryInternalUseDao;
       }
     }
   }

@@ -385,8 +385,11 @@ public final class SaleDao_Impl implements SaleDao {
   @Override
   public Flow<List<ProfitReportRow>> getProfitReport(final String startDate, final String endDate) {
     final String _sql = "\n"
-            + "        SELECT DATE(sls_transaction_date) as date, COUNT(*) as total_invoices, SUM(sls_grand_total) as total_revenue,\n"
-            + "        SUM((SELECT SUM(itm_quantity * itm_cost_price) FROM sale_items WHERE itm_sale_id = sls_invoice_number)) as total_cost\n"
+            + "        SELECT DATE(sls_transaction_date) as date,\n"
+            + "        COUNT(*) as total_invoices,\n"
+            + "        SUM(sls_grand_total) as total_revenue,\n"
+            + "        SUM((SELECT SUM(itm_quantity * itm_cost_price) FROM sale_items WHERE itm_sale_id = sls_invoice_number)) as total_cost,\n"
+            + "        COALESCE(SUM((SELECT SUM(itm_quantity) FROM sale_items WHERE itm_sale_id = sls_invoice_number)), 0) as total_qty\n"
             + "        FROM sales \n"
             + "        WHERE DATE(sls_transaction_date) BETWEEN DATE(?) AND DATE(?)\n"
             + "        GROUP BY DATE(sls_transaction_date) \n"
@@ -408,6 +411,7 @@ public final class SaleDao_Impl implements SaleDao {
           final int _cursorIndexOfTotalInvoices = 1;
           final int _cursorIndexOfTotalRevenue = 2;
           final int _cursorIndexOfTotalCost = 3;
+          final int _cursorIndexOfTotalQty = 4;
           final List<ProfitReportRow> _result = new ArrayList<ProfitReportRow>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ProfitReportRow _item;
@@ -419,7 +423,9 @@ public final class SaleDao_Impl implements SaleDao {
             _tmpTotalRevenue = _cursor.getDouble(_cursorIndexOfTotalRevenue);
             final double _tmpTotalCost;
             _tmpTotalCost = _cursor.getDouble(_cursorIndexOfTotalCost);
-            _item = new ProfitReportRow(_tmpDate,_tmpTotalInvoices,_tmpTotalRevenue,_tmpTotalCost);
+            final int _tmpTotalQty;
+            _tmpTotalQty = _cursor.getInt(_cursorIndexOfTotalQty);
+            _item = new ProfitReportRow(_tmpDate,_tmpTotalInvoices,_tmpTotalRevenue,_tmpTotalCost,_tmpTotalQty);
             _result.add(_item);
           }
           return _result;
@@ -694,6 +700,39 @@ public final class SaleDao_Impl implements SaleDao {
   }
 
   @Override
+  public Flow<Integer> getTodayCountFlow(final String today) {
+    final String _sql = "SELECT COUNT(*) FROM sales WHERE DATE(sls_transaction_date) = DATE(?)";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, today);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"sales"}, new Callable<Integer>() {
+      @Override
+      @NonNull
+      public Integer call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Integer _result;
+          if (_cursor.moveToFirst()) {
+            final int _tmp;
+            _tmp = _cursor.getInt(0);
+            _result = _tmp;
+          } else {
+            _result = 0;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
   public Object getTodayOmzet(final String today, final Continuation<? super Double> $completion) {
     final String _sql = "SELECT COALESCE(SUM(sls_grand_total), 0.0) FROM sales WHERE DATE(sls_transaction_date) = DATE(?)";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
@@ -713,6 +752,77 @@ public final class SaleDao_Impl implements SaleDao {
             _result = _tmp;
           } else {
             _result = 0.0;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Flow<Double> getTodayOmzetFlow(final String today) {
+    final String _sql = "SELECT COALESCE(SUM(sls_grand_total), 0.0) FROM sales WHERE DATE(sls_transaction_date) = DATE(?)";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, today);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"sales"}, new Callable<Double>() {
+      @Override
+      @NonNull
+      public Double call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Double _result;
+          if (_cursor.moveToFirst()) {
+            final double _tmp;
+            _tmp = _cursor.getDouble(0);
+            _result = _tmp;
+          } else {
+            _result = 0.0;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
+  public Object getTotalSalesQtyForSku(final String sku, final int year,
+      final Continuation<? super Integer> $completion) {
+    final String _sql = "\n"
+            + "        SELECT COALESCE(SUM(si.itm_quantity), 0)\n"
+            + "        FROM sale_items si\n"
+            + "        JOIN sales s ON si.itm_sale_id = s.sls_invoice_number\n"
+            + "        WHERE si.itm_sku = ? AND strftime('%Y', s.sls_transaction_date) = CAST(? AS TEXT)\n"
+            + "    ";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, sku);
+    _argIndex = 2;
+    _statement.bindLong(_argIndex, year);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<Integer>() {
+      @Override
+      @NonNull
+      public Integer call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Integer _result;
+          if (_cursor.moveToFirst()) {
+            final int _tmp;
+            _tmp = _cursor.getInt(0);
+            _result = _tmp;
+          } else {
+            _result = 0;
           }
           return _result;
         } finally {

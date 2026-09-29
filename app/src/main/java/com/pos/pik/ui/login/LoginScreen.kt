@@ -3,6 +3,7 @@ package com.pos.pik.ui.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -12,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -26,21 +29,27 @@ import com.pos.pik.data.local.UserWithRole
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: (UserWithRole) -> Unit
+    onLoginSuccess: (UserWithRole, AppMode) -> Unit
 ) {
     val username by viewModel.usernameState.collectAsState()
     val password by viewModel.passwordState.collectAsState()
+    val selectedMode by viewModel.selectedModeState.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val settings by viewModel.settings.collectAsState()
 
     val warungName = settings?.setWarungName?.takeIf { it.isNotBlank() } ?: "POS PIK"
+    val focusManager = LocalFocusManager.current
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
 
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is LoginUiState.Success -> {
-                onLoginSuccess(state.user)
+                onLoginSuccess(state.user, state.mode)
                 viewModel.resetState()
             }
             is LoginUiState.Error -> {
@@ -107,6 +116,7 @@ fun LoginScreen(
                         leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -123,10 +133,37 @@ fun LoginScreen(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done
                         ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            viewModel.login()
+                        }),
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Pilih Modul Akses:", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = selectedMode == AppMode.POS,
+                            onClick = { viewModel.selectedModeState.value = AppMode.POS },
+                            label = { Text("POS (Kasir)", fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = selectedMode == AppMode.INVENTORY,
+                            onClick = { viewModel.selectedModeState.value = AppMode.INVENTORY },
+                            label = { Text("Gudang (Inventory)", fontSize = 11.sp) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
                         onClick = { viewModel.login() },

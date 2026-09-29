@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -14,8 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pos.pik.data.local.RoleEntity
@@ -128,6 +134,7 @@ fun UserFormDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, username: String, pwd: String, phone: String, roleId: Int, isActive: Int) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     var nameText by remember { mutableStateOf(user?.usrName ?: "") }
     var usernameText by remember { mutableStateOf(user?.usrUsername ?: "") }
     var passwordText by remember { mutableStateOf(user?.usrPassword ?: "") }
@@ -139,7 +146,8 @@ fun UserFormDialog(
     val selectedRole = roles.find { it.rolId == selectedRoleId }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         title = { Text(if (user == null) "Tambah User Baru" else "Edit User") },
         text = {
             Column {
@@ -148,6 +156,8 @@ fun UserFormDialog(
                     onValueChange = { nameText = it },
                     label = { Text("Nama Lengkap") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -159,6 +169,8 @@ fun UserFormDialog(
                     label = { Text("Username") },
                     enabled = user == null,
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -169,6 +181,8 @@ fun UserFormDialog(
                     onValueChange = { passwordText = it },
                     label = { Text("Password") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -179,6 +193,8 @@ fun UserFormDialog(
                     onValueChange = { phoneText = it },
                     label = { Text("No. Telepon") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth()
                 )
 

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.*
 
 class ReportViewModel(private val repository: PosRepository) : ViewModel() {
 
-    private val _startDate = MutableStateFlow(Formatters.getCurrentDateFormatted())
+    private val _startDate = MutableStateFlow(Formatters.getFiveDaysAgoFormatted())
     val startDate: StateFlow<String> = _startDate.asStateFlow()
 
     private val _endDate = MutableStateFlow(Formatters.getCurrentDateFormatted())

@@ -37,6 +37,8 @@ public final class ProductDao_Impl implements ProductDao {
 
   private final EntityDeletionOrUpdateAdapter<ProductEntity> __updateAdapterOfProductEntity;
 
+  private final SharedSQLiteStatement __preparedStmtOfUpdateProductCostPrice;
+
   private final SharedSQLiteStatement __preparedStmtOfDeleteProductBySku;
 
   private final SharedSQLiteStatement __preparedStmtOfDeleteAllProducts;
@@ -88,6 +90,14 @@ public final class ProductDao_Impl implements ProductDao {
         }
         statement.bindLong(7, entity.getPrdIsActive());
         statement.bindString(8, entity.getPrdSku());
+      }
+    };
+    this.__preparedStmtOfUpdateProductCostPrice = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE products SET prd_cost_price = ? WHERE prd_sku = ?";
+        return _query;
       }
     };
     this.__preparedStmtOfDeleteProductBySku = new SharedSQLiteStatement(__db) {
@@ -160,6 +170,34 @@ public final class ProductDao_Impl implements ProductDao {
           return Unit.INSTANCE;
         } finally {
           __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object updateProductCostPrice(final String sku, final double costPrice,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfUpdateProductCostPrice.acquire();
+        int _argIndex = 1;
+        _stmt.bindDouble(_argIndex, costPrice);
+        _argIndex = 2;
+        _stmt.bindString(_argIndex, sku);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfUpdateProductCostPrice.release(_stmt);
         }
       }
     }, $completion);
@@ -426,7 +464,7 @@ public final class ProductDao_Impl implements ProductDao {
   @Override
   public Object getLastSkuWithPrefix(final String prefix,
       final Continuation<? super String> $completion) {
-    final String _sql = "SELECT MAX(prd_sku) FROM products WHERE prd_sku LIKE ? || '%' AND length(prd_sku) = 5";
+    final String _sql = "SELECT MAX(prd_sku) FROM products WHERE prd_sku LIKE ? || '%' AND length(prd_sku) = 7";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindString(_argIndex, prefix);

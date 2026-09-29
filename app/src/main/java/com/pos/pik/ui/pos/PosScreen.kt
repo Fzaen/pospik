@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
@@ -31,8 +32,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -55,6 +58,7 @@ fun PosScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(user.usrId) {
         viewModel.loadData(user.usrId)
@@ -114,6 +118,8 @@ fun PosScreen(
                         }
                     },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -470,7 +476,8 @@ fun PaymentModalDialog(
     }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         title = { Text("Proses Pembayaran") },
         text = {
             Column {
@@ -490,7 +497,12 @@ fun PaymentModalDialog(
                     },
                     label = { Text("Uang Dibayar (Rp)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        if (isEnough && paidAmount > 0) {
+                            onConfirm(paidAmount, change)
+                        }
+                    }),
                     trailingIcon = {
                         TextButton(onClick = {
                             rawDigits = total.toLong().toString()
@@ -545,7 +557,8 @@ fun ManualQtyDialog(
     var qtyText by remember { mutableStateOf(cartItem.cartQty.toString()) }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         title = { Text("Set Qty: ${cartItem.prdName}") },
         text = {
             OutlinedTextField(
@@ -553,7 +566,13 @@ fun ManualQtyDialog(
                 onValueChange = { qtyText = it.filter { c -> c.isDigit() } },
                 label = { Text("Kuantitas") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    val valInt = qtyText.toIntOrNull()
+                    if (valInt != null && valInt > 0) {
+                        onSave(valInt)
+                    }
+                }),
                 modifier = Modifier.fillMaxWidth()
             )
         },

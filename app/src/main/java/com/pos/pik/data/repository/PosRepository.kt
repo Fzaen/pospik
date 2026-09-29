@@ -2,6 +2,7 @@ package com.pos.pik.data.repository
 
 import com.pos.pik.data.local.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -60,11 +61,11 @@ class PosRepository(private val db: AppDatabase) {
     }
 
     suspend fun generateNextSku(catId: Int): String {
-        val prefix = if (catId > 0) catId.toString() else "1"
+        val prefix = if (catId > 0 && catId <= 999) catId.toString().padStart(3, '0') else "001"
         val lastSku = db.productDao().getLastSkuWithPrefix(prefix)
-        return if (lastSku != null) {
-            val lastNum = lastSku.toLongOrNull() ?: (prefix + "0000").toLong()
-            (lastNum + 1).toString()
+        return if (lastSku != null && lastSku.startsWith(prefix) && lastSku.length == 7) {
+            val seq = lastSku.substring(3).toIntOrNull() ?: 0
+            prefix + (seq + 1).toString().padStart(4, '0')
         } else {
             "${prefix}0001"
         }
@@ -214,6 +215,13 @@ class PosRepository(private val db: AppDatabase) {
 
     fun getAuditLogs(startDate: String, endDate: String): Flow<List<PosLogWithDetails>> = db.posLogDao().getLogs(startDate, endDate)
 
+    fun getTodayStatsFlow(): Flow<TodayStats> {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        return combine(db.saleDao().getTodayCountFlow(today), db.saleDao().getTodayOmzetFlow(today)) { count, omzet ->
+            TodayStats(count, omzet)
+        }
+    }
+
     suspend fun getTodayStats(): TodayStats {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val count = db.saleDao().getTodayCount(today)
@@ -229,4 +237,165 @@ class PosRepository(private val db: AppDatabase) {
     }
 
     suspend fun updateSettings(setting: AppSettingEntity) = db.appSettingDao().updateSettings(setting)
+
+    // --- INVENTORY / GUDANG METHODS ---
+
+    fun getMasterStock(year: Int, query: String? = null): Flow<List<MasterStockWithProduct>> {
+        return db.masterStockDao().getMasterStockByYear(year, query)
+    }
+
+    suspend fun recalculateStockForYear(year: Int) {
+        val allProducts = db.productDao().getLastSkuWithPrefix("").let {
+            // Fetch all products
+            db.productDao().getActiveProducts(null, null)
+        }
+        // Query products directly
+        val productsList = db.productDao().getLastSkuWithPrefix("") // helper
+        val activeProducts = db.productDao().getActiveProducts(null, null)
+    }
+
+    suspend fun calculateStockForSkuAndYear(sku: String, year: Int) {
+        var existing = db.masterStockDao().getStockBySkuAndYear(sku, year)
+        val initialQty = existing?.stInitialQty ?: 0
+        val incomingQty = db.inventoryIncomingDao().getTotalIncomingQty(sku, year)
+        val salesQty = db.saleDao().getTotalSalesQtyForSku(sku, year)
+        val damagedQty = db.inventoryDamagedDao().getTotalDamagedQty(sku, year)
+        val internalUseQty = db.inventoryInternalUseDao().getTotalInternalUseQty(sku, year)
+
+        val finalQty = initialQty + incomingQty - salesQty - damagedQty - internalUseQty
+
+        val dateNow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+
+        val updatedStock = MasterStockEntity(
+            stId = existing?.stId ?: 0,
+            stPrdSku = sku,
+            stYear = year,
+            stInitialQty = initialQty,
+            stIncomingQty = incomingQty,
+            stSalesQty = salesQty,
+            stDamagedQty = damagedQty,
+            stInternalUseQty = internalUseQty,
+            stFinalQty = finalQty,
+            stLastUpdated = dateNow
+        )
+        db.masterStockDao().insertStock(updatedStock)
+    }
+
+    suspend fun recalculateAllStock(year: Int) {
+        val currentStockList = db.masterStockDao().getAllStockByYear(year)
+        val skus = currentStockList.map { it.stPrdSku }.toMutableSet()
+        
+        // Also add products that don't have stock row yet
+        // Recalculate for each sku
+        for (sku in skus) {
+            calculateStockForSkuAndYear(sku, year)
+        }
+    }
+
+    suspend fun ensureStockEntryExists(sku: String, year: Int) {
+        val existing = db.masterStockDao().getStockBySkuAndYear(sku, year)
+        if (existing == null) {
+            db.masterStockDao().insertStock(
+                MasterStockEntity(
+                    stPrdSku = sku,
+                    stYear = year,
+                    stInitialQty = 0,
+                    stFinalQty = 0
+                )
+            )
+        }
+    }
+
+    suspend fun recordIncomingInventory(
+        userId: Int,
+        sku: String,
+        packageQty: Int,
+        fraction: Int,
+        totalCost: Double,
+        note: String?
+    ) {
+        val totalQty = packageQty * fraction
+        val unitCost = if (totalQty > 0) totalCost / totalQty else 0.0
+
+        val incoming = InventoryIncomingEntity(
+            incUserId = userId,
+            incPrdSku = sku,
+            incPackageQty = packageQty,
+            incFraction = fraction,
+            incTotalQty = totalQty,
+            incTotalCost = totalCost,
+            incUnitCost = unitCost,
+            incNote = note
+        )
+        db.inventoryIncomingDao().insertIncoming(incoming)
+
+        // Update product cost price (HPP) in product master
+        if (unitCost > 0) {
+            db.productDao().updateProductCostPrice(sku, unitCost)
+        }
+
+        val currentYear = SimpleDateFormat("yyyy", Locale.getDefault()).format(Date()).toInt()
+        ensureStockEntryExists(sku, currentYear)
+        calculateStockForSkuAndYear(sku, currentYear)
+    }
+
+    suspend fun recordDamagedInventory(userId: Int, sku: String, qty: Int, reason: String?) {
+        val damaged = InventoryDamagedEntity(
+            dmgUserId = userId,
+            dmgPrdSku = sku,
+            dmgQty = qty,
+            dmgReason = reason
+        )
+        db.inventoryDamagedDao().insertDamaged(damaged)
+
+        val currentYear = SimpleDateFormat("yyyy", Locale.getDefault()).format(Date()).toInt()
+        ensureStockEntryExists(sku, currentYear)
+        calculateStockForSkuAndYear(sku, currentYear)
+    }
+
+    suspend fun recordInternalUseInventory(userId: Int, sku: String, qty: Int, note: String?) {
+        val internalUse = InventoryInternalUseEntity(
+            useUserId = userId,
+            usePrdSku = sku,
+            useQty = qty,
+            useNote = note
+        )
+        db.inventoryInternalUseDao().insertInternalUse(internalUse)
+
+        val currentYear = SimpleDateFormat("yyyy", Locale.getDefault()).format(Date()).toInt()
+        ensureStockEntryExists(sku, currentYear)
+        calculateStockForSkuAndYear(sku, currentYear)
+    }
+
+    suspend fun performTutupBuku(fromYear: Int, toYear: Int) {
+        recalculateAllStock(fromYear)
+        val fromStocks = db.masterStockDao().getAllStockByYear(fromYear)
+
+        db.masterStockDao().deleteStockByYear(toYear)
+
+        val dateNow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        for (st in fromStocks) {
+            val newStock = MasterStockEntity(
+                stPrdSku = st.stPrdSku,
+                stYear = toYear,
+                stInitialQty = st.stFinalQty,
+                stIncomingQty = 0,
+                stSalesQty = 0,
+                stDamagedQty = 0,
+                stInternalUseQty = 0,
+                stFinalQty = st.stFinalQty,
+                stLastUpdated = dateNow
+            )
+            db.masterStockDao().insertStock(newStock)
+        }
+    }
+
+    fun getIncomingHistory(startDate: String, endDate: String): Flow<List<InventoryIncomingWithDetails>> =
+        db.inventoryIncomingDao().getIncomingHistory(startDate, endDate)
+
+    fun getDamagedHistory(startDate: String, endDate: String): Flow<List<InventoryDamagedWithDetails>> =
+        db.inventoryDamagedDao().getDamagedHistory(startDate, endDate)
+
+    fun getInternalUseHistory(startDate: String, endDate: String): Flow<List<InventoryInternalUseWithDetails>> =
+        db.inventoryInternalUseDao().getInternalUseHistory(startDate, endDate)
 }

@@ -54,6 +54,43 @@ fun ReportHubScreen(
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
+        val startDate by viewModel.startDate.collectAsState()
+        val endDate by viewModel.endDate.collectAsState()
+
+        Surface(color = Color.White, shadowElevation = 1.dp) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = startDate,
+                    onValueChange = { viewModel.updateDateRange(it, endDate) },
+                    label = { Text("Mulai (yyyy-MM-dd)", fontSize = 10.sp) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp)
+                )
+
+                Text("s/d", fontSize = 12.sp, color = Color.Gray)
+
+                OutlinedTextField(
+                    value = endDate,
+                    onValueChange = { viewModel.updateDateRange(startDate, it) },
+                    label = { Text("Sampai (yyyy-MM-dd)", fontSize = 10.sp) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp)
+                )
+            }
+        }
+
+        HorizontalDivider()
+
         Surface(color = Color.White, shadowElevation = 1.dp) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -132,12 +169,13 @@ fun ProfitReportTab(viewModel: ReportViewModel) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                Text("Tanggal", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
-                Text("Trx", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text("Omzet", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
-                Text("Laba", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
+                Text("Tanggal", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2.2f))
+                Text("Trx", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(0.9f))
+                Text("Qty", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(0.9f))
+                Text("Omzet", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
+                Text("Laba", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
             }
         }
 
@@ -148,14 +186,16 @@ fun ProfitReportTab(viewModel: ReportViewModel) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(Formatters.formatDateShort(row.date), fontSize = 12.sp, modifier = Modifier.weight(2f))
-                    Text("${row.totalInvoices}", fontSize = 12.sp, modifier = Modifier.weight(1f))
-                    Text(Formatters.formatRupiah(revenue), fontSize = 12.sp, modifier = Modifier.weight(2f))
+                    Text(Formatters.formatDateShort(row.date), fontSize = 11.sp, modifier = Modifier.weight(2.2f))
+                    Text("${row.totalInvoices}", fontSize = 11.sp, modifier = Modifier.weight(0.9f))
+                    Text("${row.totalQty}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(0.9f))
+                    Text(Formatters.formatRupiah(revenue), fontSize = 11.sp, modifier = Modifier.weight(2f))
                     Text(
                         Formatters.formatRupiah(profit),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = SuccessGreen,
                         modifier = Modifier.weight(2f)
