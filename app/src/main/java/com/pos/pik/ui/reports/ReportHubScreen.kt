@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.ListAlt
@@ -53,40 +54,29 @@ fun ReportHubScreen(
         SubNavItem("Audit", Icons.Default.HistoryEdu)
     )
 
+    val profitStartDate by viewModel.profitStartDate.collectAsState()
+    val profitEndDate by viewModel.profitEndDate.collectAsState()
+
+    val startDate by viewModel.startDate.collectAsState()
+    val endDate by viewModel.endDate.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize()) {
-        val startDate by viewModel.startDate.collectAsState()
-        val endDate by viewModel.endDate.collectAsState()
-
-        Surface(color = Color.White, shadowElevation = 1.dp) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = startDate,
-                    onValueChange = { viewModel.updateDateRange(it, endDate) },
-                    label = { Text("Mulai (yyyy-MM-dd)", fontSize = 10.sp) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
-                )
-
-                Text("s/d", fontSize = 12.sp, color = Color.Gray)
-
-                OutlinedTextField(
-                    value = endDate,
-                    onValueChange = { viewModel.updateDateRange(startDate, it) },
-                    label = { Text("Sampai (yyyy-MM-dd)", fontSize = 10.sp) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
-                )
-            }
+        if (selectedSubIndex == 0) {
+            DateRangeFilterBar(
+                startDate = profitStartDate,
+                endDate = profitEndDate,
+                onDateRangeSelected = { start, end ->
+                    viewModel.updateProfitDateRange(start, end)
+                }
+            )
+        } else {
+            DateRangeFilterBar(
+                startDate = startDate,
+                endDate = endDate,
+                onDateRangeSelected = { start, end ->
+                    viewModel.updateDateRange(start, end)
+                }
+            )
         }
 
         HorizontalDivider()
@@ -142,6 +132,123 @@ fun ReportHubScreen(
                 4 -> ReprintTab(viewModel, repository)
                 5 -> AuditLogTab(viewModel)
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateRangeFilterBar(
+    startDate: String,
+    endDate: String,
+    onDateRangeSelected: (String, String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    Surface(
+        color = Color.White,
+        shadowElevation = 2.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedCard(
+                onClick = { showPicker = true },
+                colors = CardDefaults.outlinedCardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "Periode Tanggal Laporan",
+                                fontSize = 10.sp,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "$startDate  s/d  $endDate",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = { showPicker = true },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("Pilih Tgl 📅", fontSize = 11.sp)
+                    }
+                }
+            }
+        }
+    }
+
+    if (showPicker) {
+        val dateRangePickerState = rememberDateRangePickerState()
+
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val startMillis = dateRangePickerState.selectedStartDateMillis
+                        val endMillis = dateRangePickerState.selectedEndDateMillis
+                        if (startMillis != null) {
+                            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).apply {
+                                timeZone = java.util.TimeZone.getTimeZone("UTC")
+                            }
+                            val startStr = sdf.format(java.util.Date(startMillis))
+                            val endStr = if (endMillis != null) sdf.format(java.util.Date(endMillis)) else startStr
+                            onDateRangeSelected(startStr, endStr)
+                        }
+                        showPicker = false
+                    }
+                ) {
+                    Text("TERAPKAN", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) {
+                    Text("BATAL")
+                }
+            }
+        ) {
+            DateRangePicker(
+                state = dateRangePickerState,
+                title = {
+                    Text("Pilih Rentang Tanggal", modifier = Modifier.padding(start = 24.dp, top = 16.dp), fontWeight = FontWeight.Bold)
+                },
+                headline = {
+                    Text("Sentuh tanggal awal & akhir pada kalender", modifier = Modifier.padding(start = 24.dp, top = 8.dp), fontSize = 12.sp, color = Color.Gray)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp)
+            )
         }
     }
 }

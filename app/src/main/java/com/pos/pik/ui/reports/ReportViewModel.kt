@@ -10,10 +10,26 @@ import kotlinx.coroutines.flow.*
 
 class ReportViewModel(private val repository: PosRepository) : ViewModel() {
 
-    private val _startDate = MutableStateFlow(Formatters.getFiveDaysAgoFormatted())
+    private val today = Formatters.getCurrentDateFormatted()
+    private val fiveDaysAgo = Formatters.getFiveDaysAgoFormatted()
+
+    // Date range for Laba Rugi (Default: 5 days ago to today)
+    private val _profitStartDate = MutableStateFlow(fiveDaysAgo)
+    val profitStartDate: StateFlow<String> = _profitStartDate.asStateFlow()
+
+    private val _profitEndDate = MutableStateFlow(today)
+    val profitEndDate: StateFlow<String> = _profitEndDate.asStateFlow()
+
+    fun updateProfitDateRange(start: String, end: String) {
+        _profitStartDate.value = start
+        _profitEndDate.value = end
+    }
+
+    // Date range for other reports (Default: Today only)
+    private val _startDate = MutableStateFlow(today)
     val startDate: StateFlow<String> = _startDate.asStateFlow()
 
-    private val _endDate = MutableStateFlow(Formatters.getCurrentDateFormatted())
+    private val _endDate = MutableStateFlow(today)
     val endDate: StateFlow<String> = _endDate.asStateFlow()
 
     fun updateDateRange(start: String, end: String) {
@@ -21,7 +37,7 @@ class ReportViewModel(private val repository: PosRepository) : ViewModel() {
         _endDate.value = end
     }
 
-    val profitReport: StateFlow<List<ProfitReportRow>> = combine(_startDate, _endDate) { s, e -> Pair(s, e) }
+    val profitReport: StateFlow<List<ProfitReportRow>> = combine(_profitStartDate, _profitEndDate) { s, e -> Pair(s, e) }
         .flatMapLatest { (s, e) -> repository.getProfitReport(s, e) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

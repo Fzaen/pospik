@@ -636,37 +636,13 @@ fun InventoryReportTab(viewModel: InventoryViewModel) {
     val endDate by viewModel.endDate.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Surface(color = Color.White, shadowElevation = 1.dp) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = startDate,
-                    onValueChange = { viewModel.onDateRangeChanged(it, endDate) },
-                    label = { Text("Mulai (yyyy-MM-dd)", fontSize = 10.sp) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
-                )
-
-                Text("s/d", fontSize = 12.sp, color = Color.Gray)
-
-                OutlinedTextField(
-                    value = endDate,
-                    onValueChange = { viewModel.onDateRangeChanged(startDate, it) },
-                    label = { Text("Sampai (yyyy-MM-dd)", fontSize = 10.sp) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
-                )
+        com.pos.pik.ui.reports.DateRangeFilterBar(
+            startDate = startDate,
+            endDate = endDate,
+            onDateRangeSelected = { start, end ->
+                viewModel.onDateRangeChanged(start, end)
             }
-        }
+        )
 
         TabRow(selectedTabIndex = subTab) {
             Tab(selected = subTab == 0, onClick = { subTab = 0 }, text = { Text("Barang Masuk", fontSize = 11.sp) })
