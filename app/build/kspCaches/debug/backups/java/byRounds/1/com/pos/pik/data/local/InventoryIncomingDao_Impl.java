@@ -86,9 +86,10 @@ public final class InventoryIncomingDao_Impl implements InventoryIncomingDao {
   public Flow<List<InventoryIncomingWithDetails>> getIncomingHistory(final String startDate,
       final String endDate) {
     final String _sql = "\n"
-            + "        SELECT i.*, p.prd_name, u.usr_name\n"
+            + "        SELECT i.*, p.prd_name, u.usr_name, c.cat_name, c.cat_subname\n"
             + "        FROM inventory_incoming i\n"
             + "        JOIN products p ON i.inc_prd_sku = p.prd_sku\n"
+            + "        JOIN categories c ON p.prd_category_id = c.cat_id\n"
             + "        JOIN users u ON i.inc_user_id = u.usr_id\n"
             + "        WHERE DATE(i.inc_date) BETWEEN DATE(?) AND DATE(?)\n"
             + "        ORDER BY i.inc_date DESC\n"
@@ -99,7 +100,7 @@ public final class InventoryIncomingDao_Impl implements InventoryIncomingDao {
     _argIndex = 2;
     _statement.bindString(_argIndex, endDate);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"inventory_incoming", "products",
-        "users"}, new Callable<List<InventoryIncomingWithDetails>>() {
+        "categories", "users"}, new Callable<List<InventoryIncomingWithDetails>>() {
       @Override
       @NonNull
       public List<InventoryIncomingWithDetails> call() throws Exception {
@@ -117,6 +118,8 @@ public final class InventoryIncomingDao_Impl implements InventoryIncomingDao {
           final int _cursorIndexOfIncNote = CursorUtil.getColumnIndexOrThrow(_cursor, "inc_note");
           final int _cursorIndexOfPrdName = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_name");
           final int _cursorIndexOfUsrName = CursorUtil.getColumnIndexOrThrow(_cursor, "usr_name");
+          final int _cursorIndexOfCatName = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_name");
+          final int _cursorIndexOfCatSubname = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_subname");
           final List<InventoryIncomingWithDetails> _result = new ArrayList<InventoryIncomingWithDetails>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final InventoryIncomingWithDetails _item;
@@ -148,7 +151,11 @@ public final class InventoryIncomingDao_Impl implements InventoryIncomingDao {
             _tmpPrdName = _cursor.getString(_cursorIndexOfPrdName);
             final String _tmpUsrName;
             _tmpUsrName = _cursor.getString(_cursorIndexOfUsrName);
-            _item = new InventoryIncomingWithDetails(_tmpIncId,_tmpIncDate,_tmpIncUserId,_tmpIncPrdSku,_tmpIncPackageQty,_tmpIncFraction,_tmpIncTotalQty,_tmpIncTotalCost,_tmpIncUnitCost,_tmpIncNote,_tmpPrdName,_tmpUsrName);
+            final String _tmpCatName;
+            _tmpCatName = _cursor.getString(_cursorIndexOfCatName);
+            final String _tmpCatSubname;
+            _tmpCatSubname = _cursor.getString(_cursorIndexOfCatSubname);
+            _item = new InventoryIncomingWithDetails(_tmpIncId,_tmpIncDate,_tmpIncUserId,_tmpIncPrdSku,_tmpIncPackageQty,_tmpIncFraction,_tmpIncTotalQty,_tmpIncTotalCost,_tmpIncUnitCost,_tmpIncNote,_tmpPrdName,_tmpUsrName,_tmpCatName,_tmpCatSubname);
             _result.add(_item);
           }
           return _result;

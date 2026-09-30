@@ -328,9 +328,10 @@ interface MasterStockDao {
 @Dao
 interface InventoryIncomingDao {
     @Query("""
-        SELECT i.*, p.prd_name, u.usr_name
+        SELECT i.*, p.prd_name, u.usr_name, c.cat_name, c.cat_subname
         FROM inventory_incoming i
         JOIN products p ON i.inc_prd_sku = p.prd_sku
+        JOIN categories c ON p.prd_category_id = c.cat_id
         JOIN users u ON i.inc_user_id = u.usr_id
         WHERE DATE(i.inc_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
         ORDER BY i.inc_date DESC
@@ -351,9 +352,10 @@ interface InventoryIncomingDao {
 @Dao
 interface InventoryDamagedDao {
     @Query("""
-        SELECT d.*, p.prd_name, u.usr_name
+        SELECT d.*, p.prd_name, u.usr_name, c.cat_name, c.cat_subname
         FROM inventory_damaged d
         JOIN products p ON d.dmg_prd_sku = p.prd_sku
+        JOIN categories c ON p.prd_category_id = c.cat_id
         JOIN users u ON d.dmg_user_id = u.usr_id
         WHERE DATE(d.dmg_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
         ORDER BY d.dmg_date DESC
@@ -374,9 +376,10 @@ interface InventoryDamagedDao {
 @Dao
 interface InventoryInternalUseDao {
     @Query("""
-        SELECT u.*, p.prd_name, us.usr_name
+        SELECT u.*, p.prd_name, us.usr_name, c.cat_name, c.cat_subname
         FROM inventory_internal_use u
         JOIN products p ON u.use_prd_sku = p.prd_sku
+        JOIN categories c ON p.prd_category_id = c.cat_id
         JOIN users us ON u.use_user_id = us.usr_id
         WHERE DATE(u.use_date) BETWEEN DATE(:startDate) AND DATE(:endDate)
         ORDER BY u.use_date DESC

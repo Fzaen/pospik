@@ -228,8 +228,8 @@ fun ProductListView(viewModel: MasterProductViewModel) {
             product = editingProduct,
             categories = categories,
             onDismiss = { showFormDialog = false },
-            onSave = { catId, customSku, name, cost, sell, img ->
-                viewModel.saveProduct(editingProduct, catId, customSku, name, cost, sell, img)
+            onSave = { catId, customSku, name, cost, sell, img, initialStock ->
+                viewModel.saveProduct(editingProduct, catId, customSku, name, cost, sell, img, initialStock)
                 showFormDialog = false
             }
         )
@@ -389,16 +389,16 @@ fun ProductFormDialog(
     product: ProductWithCategory?,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
-    onSave: (catId: Int, customSku: String?, name: String, cost: Double, sell: Double, image: String?) -> Unit
+    onSave: (catId: Int, customSku: String?, name: String, cost: Double, sell: Double, image: String?, initialStock: Int) -> Unit
 ) {
     val context = LocalContext.current
     val dialogFocusManager = LocalFocusManager.current
     var selectedCatId by remember { mutableStateOf(product?.prdCategoryId ?: categories.firstOrNull()?.catId ?: 0) }
-    var skuText by remember { mutableStateOf(product?.prdSku ?: "") }
     var nameText by remember { mutableStateOf(product?.prdName ?: "") }
     var costText by remember { mutableStateOf(product?.prdCostPrice?.toInt()?.toString() ?: "") }
     var sellText by remember { mutableStateOf(product?.prdSellingPrice?.toInt()?.toString() ?: "") }
     var imageText by remember { mutableStateOf(product?.prdImage ?: "") }
+    var initialStockText by remember { mutableStateOf("0") }
     var expandedCat by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -525,6 +525,18 @@ fun ProductFormDialog(
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = initialStockText,
+                        onValueChange = { initialStockText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Stok Awal Fisik (cth: 3)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { dialogFocusManager.moveFocus(FocusDirection.Down) }),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 OutlinedTextField(
@@ -568,11 +580,12 @@ fun ProductFormDialog(
                 onClick = {
                     onSave(
                         selectedCatId,
-                        skuText.ifBlank { null },
+                        null,
                         nameText,
                         costText.toDoubleOrNull() ?: 0.0,
                         sellText.toDoubleOrNull() ?: 0.0,
-                        imageText.ifBlank { null }
+                        imageText.ifBlank { null },
+                        initialStockText.toIntOrNull() ?: 0
                     )
                 }
             ) {

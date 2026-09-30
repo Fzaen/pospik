@@ -297,7 +297,9 @@ data class InventoryIncomingWithDetails(
     @ColumnInfo(name = "inc_unit_cost") val incUnitCost: Double,
     @ColumnInfo(name = "inc_note") val incNote: String?,
     @ColumnInfo(name = "prd_name") val prdName: String,
-    @ColumnInfo(name = "usr_name") val usrName: String
+    @ColumnInfo(name = "usr_name") val usrName: String,
+    @ColumnInfo(name = "cat_name") val catName: String,
+    @ColumnInfo(name = "cat_subname") val catSubname: String
 )
 
 @Entity(tableName = "inventory_damaged")
@@ -319,7 +321,9 @@ data class InventoryDamagedWithDetails(
     @ColumnInfo(name = "dmg_qty") val dmgQty: Int,
     @ColumnInfo(name = "dmg_reason") val dmgReason: String?,
     @ColumnInfo(name = "prd_name") val prdName: String,
-    @ColumnInfo(name = "usr_name") val usrName: String
+    @ColumnInfo(name = "usr_name") val usrName: String,
+    @ColumnInfo(name = "cat_name") val catName: String,
+    @ColumnInfo(name = "cat_subname") val catSubname: String
 )
 
 @Entity(tableName = "inventory_internal_use")
@@ -341,5 +345,7 @@ data class InventoryInternalUseWithDetails(
     @ColumnInfo(name = "use_qty") val useQty: Int,
     @ColumnInfo(name = "use_note") val useNote: String?,
     @ColumnInfo(name = "prd_name") val prdName: String,
-    @ColumnInfo(name = "usr_name") val usrName: String
+    @ColumnInfo(name = "usr_name") val usrName: String,
+    @ColumnInfo(name = "cat_name") val catName: String,
+    @ColumnInfo(name = "cat_subname") val catSubname: String
 )

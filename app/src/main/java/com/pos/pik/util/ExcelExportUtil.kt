@@ -6,6 +6,9 @@ import androidx.core.content.FileProvider
 import com.pos.pik.data.local.CategorySalesReportRow
 import com.pos.pik.data.local.ItemSalesReportRow
 import com.pos.pik.data.local.SubCategorySalesReportRow
+import com.pos.pik.data.local.InventoryIncomingWithDetails
+import com.pos.pik.data.local.InventoryDamagedWithDetails
+import com.pos.pik.data.local.InventoryInternalUseWithDetails
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -86,6 +89,76 @@ object ExcelExportUtil {
             sb.append("${row.totalProfit}\n")
         }
 
+        shareCsvFile(context, fileName, sb.toString(), title)
+    }
+
+    fun exportIncomingReportToCsv(
+        context: Context,
+        reportData: List<InventoryIncomingWithDetails>,
+        title: String
+    ) {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+        val fileName = "Laporan_Barang_Masuk_$timestamp.csv"
+        val sb = StringBuilder()
+        sb.append("Tanggal,SKU,Produk,Kategori,Sub-Kategori,Jumlah Dus,Fraction,Total Qty,Total Beli,HPP Satuan,Oleh,Catatan\n")
+        reportData.forEach { item ->
+            sb.append("${item.incDate},")
+            sb.append("${item.incPrdSku},")
+            sb.append("\"${item.prdName}\",")
+            sb.append("\"${item.catName}\",")
+            sb.append("\"${item.catSubname}\",")
+            sb.append("${item.incPackageQty},")
+            sb.append("${item.incFraction},")
+            sb.append("${item.incTotalQty},")
+            sb.append("${item.incTotalCost},")
+            sb.append("${item.incUnitCost},")
+            sb.append("\"${item.usrName}\",")
+            sb.append("\"${item.incNote ?: ""}\"\n")
+        }
+        shareCsvFile(context, fileName, sb.toString(), title)
+    }
+
+    fun exportDamagedReportToCsv(
+        context: Context,
+        reportData: List<InventoryDamagedWithDetails>,
+        title: String
+    ) {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+        val fileName = "Laporan_Barang_Rusak_$timestamp.csv"
+        val sb = StringBuilder()
+        sb.append("Tanggal,SKU,Produk,Kategori,Sub-Kategori,Qty Rusak,Alasan,Oleh\n")
+        reportData.forEach { item ->
+            sb.append("${item.dmgDate},")
+            sb.append("${item.dmgPrdSku},")
+            sb.append("\"${item.prdName}\",")
+            sb.append("\"${item.catName}\",")
+            sb.append("\"${item.catSubname}\",")
+            sb.append("${item.dmgQty},")
+            sb.append("\"${item.dmgReason ?: ""}\",")
+            sb.append("\"${item.usrName}\"\n")
+        }
+        shareCsvFile(context, fileName, sb.toString(), title)
+    }
+
+    fun exportInternalUseReportToCsv(
+        context: Context,
+        reportData: List<InventoryInternalUseWithDetails>,
+        title: String
+    ) {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+        val fileName = "Laporan_Pengeluaran_Khusus_$timestamp.csv"
+        val sb = StringBuilder()
+        sb.append("Tanggal,SKU,Produk,Kategori,Sub-Kategori,Qty Keluar,Keterangan,Oleh\n")
+        reportData.forEach { item ->
+            sb.append("${item.useDate},")
+            sb.append("${item.usePrdSku},")
+            sb.append("\"${item.prdName}\",")
+            sb.append("\"${item.catName}\",")
+            sb.append("\"${item.catSubname}\",")
+            sb.append("${item.useQty},")
+            sb.append("\"${item.useNote ?: ""}\",")
+            sb.append("\"${item.usrName}\"\n")
+        }
         shareCsvFile(context, fileName, sb.toString(), title)
     }
 

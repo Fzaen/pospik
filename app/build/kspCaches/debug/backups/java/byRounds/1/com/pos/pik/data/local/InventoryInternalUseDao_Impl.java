@@ -82,9 +82,10 @@ public final class InventoryInternalUseDao_Impl implements InventoryInternalUseD
   public Flow<List<InventoryInternalUseWithDetails>> getInternalUseHistory(final String startDate,
       final String endDate) {
     final String _sql = "\n"
-            + "        SELECT u.*, p.prd_name, us.usr_name\n"
+            + "        SELECT u.*, p.prd_name, us.usr_name, c.cat_name, c.cat_subname\n"
             + "        FROM inventory_internal_use u\n"
             + "        JOIN products p ON u.use_prd_sku = p.prd_sku\n"
+            + "        JOIN categories c ON p.prd_category_id = c.cat_id\n"
             + "        JOIN users us ON u.use_user_id = us.usr_id\n"
             + "        WHERE DATE(u.use_date) BETWEEN DATE(?) AND DATE(?)\n"
             + "        ORDER BY u.use_date DESC\n"
@@ -95,7 +96,7 @@ public final class InventoryInternalUseDao_Impl implements InventoryInternalUseD
     _argIndex = 2;
     _statement.bindString(_argIndex, endDate);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"inventory_internal_use",
-        "products", "users"}, new Callable<List<InventoryInternalUseWithDetails>>() {
+        "products", "categories", "users"}, new Callable<List<InventoryInternalUseWithDetails>>() {
       @Override
       @NonNull
       public List<InventoryInternalUseWithDetails> call() throws Exception {
@@ -109,6 +110,8 @@ public final class InventoryInternalUseDao_Impl implements InventoryInternalUseD
           final int _cursorIndexOfUseNote = CursorUtil.getColumnIndexOrThrow(_cursor, "use_note");
           final int _cursorIndexOfPrdName = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_name");
           final int _cursorIndexOfUsrName = CursorUtil.getColumnIndexOrThrow(_cursor, "usr_name");
+          final int _cursorIndexOfCatName = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_name");
+          final int _cursorIndexOfCatSubname = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_subname");
           final List<InventoryInternalUseWithDetails> _result = new ArrayList<InventoryInternalUseWithDetails>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final InventoryInternalUseWithDetails _item;
@@ -132,7 +135,11 @@ public final class InventoryInternalUseDao_Impl implements InventoryInternalUseD
             _tmpPrdName = _cursor.getString(_cursorIndexOfPrdName);
             final String _tmpUsrName;
             _tmpUsrName = _cursor.getString(_cursorIndexOfUsrName);
-            _item = new InventoryInternalUseWithDetails(_tmpUseId,_tmpUseDate,_tmpUseUserId,_tmpUsePrdSku,_tmpUseQty,_tmpUseNote,_tmpPrdName,_tmpUsrName);
+            final String _tmpCatName;
+            _tmpCatName = _cursor.getString(_cursorIndexOfCatName);
+            final String _tmpCatSubname;
+            _tmpCatSubname = _cursor.getString(_cursorIndexOfCatSubname);
+            _item = new InventoryInternalUseWithDetails(_tmpUseId,_tmpUseDate,_tmpUseUserId,_tmpUsePrdSku,_tmpUseQty,_tmpUseNote,_tmpPrdName,_tmpUsrName,_tmpCatName,_tmpCatSubname);
             _result.add(_item);
           }
           return _result;

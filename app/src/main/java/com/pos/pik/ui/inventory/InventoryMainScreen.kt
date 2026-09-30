@@ -31,6 +31,7 @@ import com.pos.pik.data.repository.PosRepository
 import com.pos.pik.ui.master.MasterCategoryViewModel
 import com.pos.pik.ui.master.MasterProductScreen
 import com.pos.pik.ui.master.MasterProductViewModel
+import com.pos.pik.util.ExcelExportUtil
 import com.pos.pik.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,24 +84,18 @@ fun InventoryMainScreen(
                 NavigationBarItem(
                     selected = currentTab == 2,
                     onClick = { currentTab = 2 },
-                    label = { Text("Rusak", fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.BrokenImage, contentDescription = null) }
+                    label = { Text("Keluar", fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Output, contentDescription = null) }
                 )
                 NavigationBarItem(
                     selected = currentTab == 3,
                     onClick = { currentTab = 3 },
-                    label = { Text("Khusus", fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.Outbox, contentDescription = null) }
-                )
-                NavigationBarItem(
-                    selected = currentTab == 4,
-                    onClick = { currentTab = 4 },
                     label = { Text("Produk", fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Inventory2, contentDescription = null) }
                 )
                 NavigationBarItem(
-                    selected = currentTab == 5,
-                    onClick = { currentTab = 5 },
+                    selected = currentTab == 4,
+                    onClick = { currentTab = 4 },
                     label = { Text("Laporan", fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Assessment, contentDescription = null) }
                 )
@@ -115,13 +110,12 @@ fun InventoryMainScreen(
             when (currentTab) {
                 0 -> InventoryStockTab(viewModel)
                 1 -> InventoryIncomingTab(user, viewModel)
-                2 -> InventoryDamagedTab(user, viewModel)
-                3 -> InventoryInternalUseTab(user, viewModel)
-                4 -> MasterProductScreen(
+                2 -> InventoryKeluarTab(user, viewModel)
+                3 -> MasterProductScreen(
                     productViewModel = remember { MasterProductViewModel(repository) },
                     categoryViewModel = remember { MasterCategoryViewModel(repository) }
                 )
-                5 -> InventoryReportTab(viewModel)
+                4 -> InventoryReportTab(viewModel)
             }
         }
     }
@@ -269,6 +263,26 @@ fun InventoryStockTab(viewModel: InventoryViewModel) {
                 TextButton(onClick = { showTutupBukuDialog = false }) { Text("BATAL") }
             }
         )
+    }
+}
+
+@Composable
+fun InventoryKeluarTab(user: UserWithRole, viewModel: InventoryViewModel) {
+    var subTab by remember { mutableIntStateOf(0) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TabRow(selectedTabIndex = subTab) {
+            Tab(selected = subTab == 0, onClick = { subTab = 0 }, text = { Text("Barang Rusak", fontSize = 12.sp) })
+            Tab(selected = subTab == 1, onClick = { subTab = 1 }, text = { Text("Pengeluaran Khusus", fontSize = 12.sp) })
+        }
+
+        Box(modifier = Modifier.weight(1f)) {
+            if (subTab == 0) {
+                InventoryDamagedTab(user, viewModel)
+            } else {
+                InventoryInternalUseTab(user, viewModel)
+            }
+        }
     }
 }
 
@@ -430,6 +444,51 @@ fun InventoryIncomingTab(user: UserWithRole, viewModel: InventoryViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun EditableReasonDropdown(
+    value: String,
+    onValueChanged: (String) -> Unit,
+    options: List<String>,
+    label: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val filtered = options.filter { it.contains(value, ignoreCase = true) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {
+                onValueChanged(it)
+                expanded = true
+            },
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { opt ->
+                DropdownMenuItem(
+                    text = { Text(opt) },
+                    onClick = {
+                        onValueChanged(opt)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun InventoryDamagedTab(user: UserWithRole, viewModel: InventoryViewModel) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -437,7 +496,7 @@ fun InventoryDamagedTab(user: UserWithRole, viewModel: InventoryViewModel) {
 
     var selectedSku by remember { mutableStateOf(products.firstOrNull()?.prdSku ?: "") }
     var qtyText by remember { mutableStateOf("1") }
-    var reasonText by remember { mutableStateOf("") }
+    var reasonText by remember { mutableStateOf("Rusak") }
     var expandedProduct by remember { mutableStateOf(false) }
 
     val qty = qtyText.toIntOrNull() ?: 0
@@ -449,7 +508,7 @@ fun InventoryDamagedTab(user: UserWithRole, viewModel: InventoryViewModel) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("INPUT BARANG MUSNAH / RUSAK", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Red)
+        Text("INPUT BARANG RUSAK", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Red)
         Spacer(modifier = Modifier.height(12.dp))
 
         ExposedDropdownMenuBox(
@@ -487,7 +546,7 @@ fun InventoryDamagedTab(user: UserWithRole, viewModel: InventoryViewModel) {
         OutlinedTextField(
             value = qtyText,
             onValueChange = { qtyText = it.filter { c -> c.isDigit() } },
-            label = { Text("Jumlah Rusak / Busuk (Pcs)") },
+            label = { Text("Jumlah Rusak / Kadaluarsa (Pcs)") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
@@ -496,14 +555,11 @@ fun InventoryDamagedTab(user: UserWithRole, viewModel: InventoryViewModel) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
+        EditableReasonDropdown(
             value = reasonText,
-            onValueChange = { reasonText = it },
-            label = { Text("Alasan Kerusakan (cth: Pecah / Busuk / Kadaluarsa)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            modifier = Modifier.fillMaxWidth()
+            onValueChanged = { reasonText = it },
+            options = listOf("Rusak", "Kadaluarsa"),
+            label = "Alasan (Pilih atau Ketik Manual)"
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -520,7 +576,7 @@ fun InventoryDamagedTab(user: UserWithRole, viewModel: InventoryViewModel) {
                     onSuccess = {
                         Toast.makeText(context, "Barang Rusak Berhasil Dicatat!", Toast.LENGTH_SHORT).show()
                         qtyText = "1"
-                        reasonText = ""
+                        reasonText = "Rusak"
                     }
                 )
             },
@@ -542,7 +598,7 @@ fun InventoryInternalUseTab(user: UserWithRole, viewModel: InventoryViewModel) {
 
     var selectedSku by remember { mutableStateOf(products.firstOrNull()?.prdSku ?: "") }
     var qtyText by remember { mutableStateOf("1") }
-    var noteText by remember { mutableStateOf("") }
+    var noteText by remember { mutableStateOf("Konsumsi Keluarga") }
     var expandedProduct by remember { mutableStateOf(false) }
 
     val qty = qtyText.toIntOrNull() ?: 0
@@ -554,7 +610,7 @@ fun InventoryInternalUseTab(user: UserWithRole, viewModel: InventoryViewModel) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("PENGELUARAN KHUSUS (KONSUMSI SENDIRI/ANAK)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF6A1B9A))
+        Text("PENGELUARAN KHUSUS (KONSUMSI)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF6A1B9A))
         Spacer(modifier = Modifier.height(12.dp))
 
         ExposedDropdownMenuBox(
@@ -601,14 +657,11 @@ fun InventoryInternalUseTab(user: UserWithRole, viewModel: InventoryViewModel) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
+        EditableReasonDropdown(
             value = noteText,
-            onValueChange = { noteText = it },
-            label = { Text("Keterangan (cth: Dimakan sendiri, Anak, Konsumsi warung)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            modifier = Modifier.fillMaxWidth()
+            onValueChanged = { noteText = it },
+            options = listOf("Konsumsi Keluarga", "Konsumsi Anak", "Konsumsi Warung"),
+            label = "Keterangan (Pilih atau Ketik Manual)"
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -625,7 +678,7 @@ fun InventoryInternalUseTab(user: UserWithRole, viewModel: InventoryViewModel) {
                     onSuccess = {
                         Toast.makeText(context, "Pengeluaran Khusus Berhasil Dicatat!", Toast.LENGTH_SHORT).show()
                         qtyText = "1"
-                        noteText = ""
+                        noteText = "Konsumsi Keluarga"
                     }
                 )
             },
@@ -640,6 +693,7 @@ fun InventoryInternalUseTab(user: UserWithRole, viewModel: InventoryViewModel) {
 
 @Composable
 fun InventoryReportTab(viewModel: InventoryViewModel) {
+    val context = LocalContext.current
     var subTab by remember { mutableIntStateOf(0) }
     val incomingList by viewModel.incomingHistory.collectAsState()
     val damagedList by viewModel.damagedHistory.collectAsState()
@@ -658,24 +712,40 @@ fun InventoryReportTab(viewModel: InventoryViewModel) {
         )
 
         TabRow(selectedTabIndex = subTab) {
-            Tab(selected = subTab == 0, onClick = { subTab = 0 }, text = { Text("Barang Masuk", fontSize = 11.sp) })
-            Tab(selected = subTab == 1, onClick = { subTab = 1 }, text = { Text("Barang Rusak", fontSize = 11.sp) })
-            Tab(selected = subTab == 2, onClick = { subTab = 2 }, text = { Text("Pengeluaran Khusus", fontSize = 11.sp) })
+            Tab(selected = subTab == 0, onClick = { subTab = 0 }, text = { Text("Barang Masuk", fontSize = 10.sp) })
+            Tab(selected = subTab == 1, onClick = { subTab = 1 }, text = { Text("Barang Rusak", fontSize = 10.sp) })
+            Tab(selected = subTab == 2, onClick = { subTab = 2 }, text = { Text("Pengeluaran Khusus", fontSize = 10.sp) })
         }
 
         Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
             when (subTab) {
                 0 -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(incomingList) { item ->
-                            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(item.prdName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("Tanggal: ${Formatters.formatDateDisplay(item.incDate)} | Oleh: ${item.usrName}", fontSize = 11.sp, color = Color.Gray)
-                                    Text("Total Qty: ${item.incTotalQty} pcs (${item.incPackageQty} x ${item.incFraction})", fontSize = 12.sp)
-                                    Text("Total Beli: ${Formatters.formatRupiah(item.incTotalCost)} (HPP: ${Formatters.formatRupiah(item.incUnitCost)}/pcs)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                    if (!item.incNote.isNullOrBlank()) {
-                                        Text("Catatan: ${item.incNote}", fontSize = 11.sp, color = Color.Gray)
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Riwayat Barang Masuk", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            IconButton(onClick = {
+                                ExcelExportUtil.exportIncomingReportToCsv(context, incomingList, "Laporan Barang Masuk")
+                            }) {
+                                Icon(Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                            items(incomingList) { item ->
+                                Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text("${item.prdName} [${item.incPrdSku}]", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text("Kategori: ${item.catName} / ${item.catSubname}", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                        Text("Tanggal: ${Formatters.formatDateDisplay(item.incDate)} | Oleh: ${item.usrName}", fontSize = 11.sp, color = Color.Gray)
+                                        Text("Total Qty: ${item.incTotalQty} pcs (${item.incPackageQty} x ${item.incFraction})", fontSize = 12.sp)
+                                        Text("Total Beli: ${Formatters.formatRupiah(item.incTotalCost)} (HPP: ${Formatters.formatRupiah(item.incUnitCost)}/pcs)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        if (!item.incNote.isNullOrBlank()) {
+                                            Text("Catatan: ${item.incNote}", fontSize = 11.sp, color = Color.Gray)
+                                        }
                                     }
                                 }
                             }
@@ -683,15 +753,31 @@ fun InventoryReportTab(viewModel: InventoryViewModel) {
                     }
                 }
                 1 -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(damagedList) { item ->
-                            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(item.prdName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("Tanggal: ${Formatters.formatDateDisplay(item.dmgDate)} | Oleh: ${item.usrName}", fontSize = 11.sp, color = Color.Gray)
-                                    Text("Qty Rusak: ${item.dmgQty} pcs", fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.Bold)
-                                    if (!item.dmgReason.isNullOrBlank()) {
-                                        Text("Alasan: ${item.dmgReason}", fontSize = 11.sp, color = Color.Gray)
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Riwayat Barang Rusak", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            IconButton(onClick = {
+                                ExcelExportUtil.exportDamagedReportToCsv(context, damagedList, "Laporan Barang Rusak")
+                            }) {
+                                Icon(Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                            items(damagedList) { item ->
+                                Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text("${item.prdName} [${item.dmgPrdSku}]", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text("Kategori: ${item.catName} / ${item.catSubname}", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                        Text("Tanggal: ${Formatters.formatDateDisplay(item.dmgDate)} | Oleh: ${item.usrName}", fontSize = 11.sp, color = Color.Gray)
+                                        Text("Qty Rusak: ${item.dmgQty} pcs", fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.Bold)
+                                        if (!item.dmgReason.isNullOrBlank()) {
+                                            Text("Alasan: ${item.dmgReason}", fontSize = 11.sp, color = Color.Gray)
+                                        }
                                     }
                                 }
                             }
@@ -699,15 +785,31 @@ fun InventoryReportTab(viewModel: InventoryViewModel) {
                     }
                 }
                 2 -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(internalUseList) { item ->
-                            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(item.prdName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("Tanggal: ${Formatters.formatDateDisplay(item.useDate)} | Oleh: ${item.usrName}", fontSize = 11.sp, color = Color.Gray)
-                                    Text("Qty Khusus: ${item.useQty} pcs", fontSize = 12.sp, color = Color(0xFF6A1B9A), fontWeight = FontWeight.Bold)
-                                    if (!item.useNote.isNullOrBlank()) {
-                                        Text("Keterangan: ${item.useNote}", fontSize = 11.sp, color = Color.Gray)
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Riwayat Pengeluaran Khusus", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            IconButton(onClick = {
+                                ExcelExportUtil.exportInternalUseReportToCsv(context, internalUseList, "Laporan Pengeluaran Khusus")
+                            }) {
+                                Icon(Icons.Default.FileDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                            items(internalUseList) { item ->
+                                Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text("${item.prdName} [${item.usePrdSku}]", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text("Kategori: ${item.catName} / ${item.catSubname}", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                        Text("Tanggal: ${Formatters.formatDateDisplay(item.useDate)} | Oleh: ${item.usrName}", fontSize = 11.sp, color = Color.Gray)
+                                        Text("Qty Keluar: ${item.useQty} pcs", fontSize = 12.sp, color = Color(0xFF6A1B9A), fontWeight = FontWeight.Bold)
+                                        if (!item.useNote.isNullOrBlank()) {
+                                            Text("Keterangan: ${item.useNote}", fontSize = 11.sp, color = Color.Gray)
+                                        }
                                     }
                                 }
                             }

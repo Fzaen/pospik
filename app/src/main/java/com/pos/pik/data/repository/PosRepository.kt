@@ -71,7 +71,18 @@ class PosRepository(private val db: AppDatabase) {
         }
     }
 
-    suspend fun addProduct(product: ProductEntity) = db.productDao().insertProduct(product)
+    suspend fun addProduct(product: ProductEntity, initialStock: Int = 0) {
+        db.productDao().insertProduct(product)
+        val currentYear = SimpleDateFormat("yyyy", Locale.getDefault()).format(Date()).toInt()
+        db.masterStockDao().insertStock(
+            MasterStockEntity(
+                stPrdSku = product.prdSku,
+                stYear = currentYear,
+                stInitialQty = initialStock,
+                stFinalQty = initialStock
+            )
+        )
+    }
 
     suspend fun updateProduct(product: ProductEntity) = db.productDao().updateProduct(product)
 

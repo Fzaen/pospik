@@ -62,7 +62,8 @@ class MasterProductViewModel(private val repository: PosRepository) : ViewModel(
         name: String,
         costPrice: Double,
         sellingPrice: Double,
-        imagePath: String?
+        imagePath: String?,
+        initialStock: Int = 0
     ) {
         viewModelScope.launch {
             if (product == null) {
@@ -76,7 +77,8 @@ class MasterProductViewModel(private val repository: PosRepository) : ViewModel(
                         prdSellingPrice = sellingPrice,
                         prdImage = imagePath,
                         prdIsActive = 1
-                    )
+                    ),
+                    initialStock = initialStock
                 )
             } else {
                 repository.updateProduct(

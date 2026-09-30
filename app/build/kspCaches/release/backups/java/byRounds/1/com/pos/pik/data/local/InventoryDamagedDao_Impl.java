@@ -82,9 +82,10 @@ public final class InventoryDamagedDao_Impl implements InventoryDamagedDao {
   public Flow<List<InventoryDamagedWithDetails>> getDamagedHistory(final String startDate,
       final String endDate) {
     final String _sql = "\n"
-            + "        SELECT d.*, p.prd_name, u.usr_name\n"
+            + "        SELECT d.*, p.prd_name, u.usr_name, c.cat_name, c.cat_subname\n"
             + "        FROM inventory_damaged d\n"
             + "        JOIN products p ON d.dmg_prd_sku = p.prd_sku\n"
+            + "        JOIN categories c ON p.prd_category_id = c.cat_id\n"
             + "        JOIN users u ON d.dmg_user_id = u.usr_id\n"
             + "        WHERE DATE(d.dmg_date) BETWEEN DATE(?) AND DATE(?)\n"
             + "        ORDER BY d.dmg_date DESC\n"
@@ -95,7 +96,7 @@ public final class InventoryDamagedDao_Impl implements InventoryDamagedDao {
     _argIndex = 2;
     _statement.bindString(_argIndex, endDate);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"inventory_damaged", "products",
-        "users"}, new Callable<List<InventoryDamagedWithDetails>>() {
+        "categories", "users"}, new Callable<List<InventoryDamagedWithDetails>>() {
       @Override
       @NonNull
       public List<InventoryDamagedWithDetails> call() throws Exception {
@@ -109,6 +110,8 @@ public final class InventoryDamagedDao_Impl implements InventoryDamagedDao {
           final int _cursorIndexOfDmgReason = CursorUtil.getColumnIndexOrThrow(_cursor, "dmg_reason");
           final int _cursorIndexOfPrdName = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_name");
           final int _cursorIndexOfUsrName = CursorUtil.getColumnIndexOrThrow(_cursor, "usr_name");
+          final int _cursorIndexOfCatName = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_name");
+          final int _cursorIndexOfCatSubname = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_subname");
           final List<InventoryDamagedWithDetails> _result = new ArrayList<InventoryDamagedWithDetails>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final InventoryDamagedWithDetails _item;
@@ -132,7 +135,11 @@ public final class InventoryDamagedDao_Impl implements InventoryDamagedDao {
             _tmpPrdName = _cursor.getString(_cursorIndexOfPrdName);
             final String _tmpUsrName;
             _tmpUsrName = _cursor.getString(_cursorIndexOfUsrName);
-            _item = new InventoryDamagedWithDetails(_tmpDmgId,_tmpDmgDate,_tmpDmgUserId,_tmpDmgPrdSku,_tmpDmgQty,_tmpDmgReason,_tmpPrdName,_tmpUsrName);
+            final String _tmpCatName;
+            _tmpCatName = _cursor.getString(_cursorIndexOfCatName);
+            final String _tmpCatSubname;
+            _tmpCatSubname = _cursor.getString(_cursorIndexOfCatSubname);
+            _item = new InventoryDamagedWithDetails(_tmpDmgId,_tmpDmgDate,_tmpDmgUserId,_tmpDmgPrdSku,_tmpDmgQty,_tmpDmgReason,_tmpPrdName,_tmpUsrName,_tmpCatName,_tmpCatSubname);
             _result.add(_item);
           }
           return _result;
