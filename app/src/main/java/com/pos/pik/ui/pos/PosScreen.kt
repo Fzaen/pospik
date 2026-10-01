@@ -109,6 +109,7 @@ fun PosScreen(
                     }
                 }
 
+
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChanged(it) },

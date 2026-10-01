@@ -187,6 +187,37 @@ fun LoginScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    var showHelpDialog by remember { mutableStateOf(false) }
+
+                    TextButton(onClick = { showHelpDialog = true }) {
+                        Text("📖 Petunjuk Penggunaan (Panduan)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    if (showHelpDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showHelpDialog = false },
+                            title = { Text("Panduan Pengguna Baru") },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Ikuti 5 langkah operasional berikut untuk mulai menggunakan aplikasi:", fontSize = 12.sp, color = Color.Gray)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("1. Login ke Modul Gudang (Inventory).", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("2. Daftarkan Kategori produk terlebih dahulu.", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("3. Daftarkan Menu / Produk barang.", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("4. Login ke Modul POS (Kasir).", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("5. Belajar Membuat Penjualan (Checkout & cetak struk).", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            confirmButton = {
+                                Button(onClick = { showHelpDialog = false }) {
+                                    Text("MENGERTI")
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

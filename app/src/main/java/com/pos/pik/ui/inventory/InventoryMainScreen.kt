@@ -171,9 +171,7 @@ fun InventoryStockTab(viewModel: InventoryViewModel) {
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -451,7 +449,6 @@ fun EditableReasonDropdown(
     label: String
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val filtered = options.filter { it.contains(value, ignoreCase = true) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -461,7 +458,6 @@ fun EditableReasonDropdown(
             value = value,
             onValueChange = {
                 onValueChanged(it)
-                expanded = true
             },
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
