@@ -64,13 +64,13 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `sales` (`sls_invoice_number` TEXT NOT NULL, `sls_transaction_date` TEXT NOT NULL, `sls_user_id` INTEGER NOT NULL, `sls_subtotal` REAL NOT NULL, `sls_discount_amount` REAL NOT NULL, `sls_grand_total` REAL NOT NULL, `sls_paid_amount` REAL NOT NULL, `sls_change_amount` REAL NOT NULL, `sls_payment_method` TEXT NOT NULL, `sls_total_item` INTEGER NOT NULL, PRIMARY KEY(`sls_invoice_number`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `sale_items` (`itm_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `itm_sale_id` TEXT NOT NULL, `itm_sku` TEXT NOT NULL, `itm_discount` REAL NOT NULL, `itm_cashback` REAL NOT NULL, `itm_quantity` INTEGER NOT NULL, `itm_unit_price` REAL NOT NULL, `itm_cost_price` REAL NOT NULL, `itm_subtotal` REAL NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `pos_logs` (`log_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `log_user_id` INTEGER NOT NULL, `log_prd_sku` TEXT NOT NULL, `log_action` TEXT NOT NULL, `log_old_qty` INTEGER NOT NULL, `log_new_qty` INTEGER NOT NULL, `log_description` TEXT, `log_timestamp` TEXT NOT NULL)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `app_settings` (`set_id` INTEGER NOT NULL, `set_warung_name` TEXT NOT NULL, `set_address` TEXT NOT NULL, `set_phone` TEXT NOT NULL, `set_default_printer` TEXT, `set_paper_size` INTEGER NOT NULL, `set_margin` REAL NOT NULL, PRIMARY KEY(`set_id`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `app_settings` (`set_id` INTEGER NOT NULL, `set_warung_name` TEXT NOT NULL, `set_address` TEXT NOT NULL, `set_phone` TEXT NOT NULL, `set_default_printer` TEXT, `set_paper_size` INTEGER NOT NULL, `set_margin` REAL NOT NULL, `set_tenant_id` TEXT NOT NULL, `set_server_url` TEXT NOT NULL, PRIMARY KEY(`set_id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `master_stock` (`st_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `st_prd_sku` TEXT NOT NULL, `st_year` INTEGER NOT NULL, `st_initial_qty` INTEGER NOT NULL, `st_incoming_qty` INTEGER NOT NULL, `st_sales_qty` INTEGER NOT NULL, `st_damaged_qty` INTEGER NOT NULL, `st_internal_use_qty` INTEGER NOT NULL, `st_final_qty` INTEGER NOT NULL, `st_last_updated` TEXT NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `inventory_incoming` (`inc_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `inc_date` TEXT NOT NULL, `inc_user_id` INTEGER NOT NULL, `inc_prd_sku` TEXT NOT NULL, `inc_package_qty` INTEGER NOT NULL, `inc_fraction` INTEGER NOT NULL, `inc_total_qty` INTEGER NOT NULL, `inc_total_cost` REAL NOT NULL, `inc_unit_cost` REAL NOT NULL, `inc_note` TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `inventory_damaged` (`dmg_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dmg_date` TEXT NOT NULL, `dmg_user_id` INTEGER NOT NULL, `dmg_prd_sku` TEXT NOT NULL, `dmg_qty` INTEGER NOT NULL, `dmg_reason` TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `inventory_internal_use` (`use_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `use_date` TEXT NOT NULL, `use_user_id` INTEGER NOT NULL, `use_prd_sku` TEXT NOT NULL, `use_qty` INTEGER NOT NULL, `use_note` TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '51d968aacbbf3aa3b3ba9ac2fd5ef98e')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5dc55ccb3b616db3dc651c5a33ac0d4e')");
       }
 
       @Override
@@ -265,7 +265,7 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoPosLogs + "\n"
                   + " Found:\n" + _existingPosLogs);
         }
-        final HashMap<String, TableInfo.Column> _columnsAppSettings = new HashMap<String, TableInfo.Column>(7);
+        final HashMap<String, TableInfo.Column> _columnsAppSettings = new HashMap<String, TableInfo.Column>(9);
         _columnsAppSettings.put("set_id", new TableInfo.Column("set_id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAppSettings.put("set_warung_name", new TableInfo.Column("set_warung_name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAppSettings.put("set_address", new TableInfo.Column("set_address", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -273,6 +273,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         _columnsAppSettings.put("set_default_printer", new TableInfo.Column("set_default_printer", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAppSettings.put("set_paper_size", new TableInfo.Column("set_paper_size", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAppSettings.put("set_margin", new TableInfo.Column("set_margin", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsAppSettings.put("set_tenant_id", new TableInfo.Column("set_tenant_id", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsAppSettings.put("set_server_url", new TableInfo.Column("set_server_url", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysAppSettings = new HashSet<TableInfo.ForeignKey>(0);
         final HashSet<TableInfo.Index> _indicesAppSettings = new HashSet<TableInfo.Index>(0);
         final TableInfo _infoAppSettings = new TableInfo("app_settings", _columnsAppSettings, _foreignKeysAppSettings, _indicesAppSettings);
@@ -356,7 +358,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "51d968aacbbf3aa3b3ba9ac2fd5ef98e", "12d8489f2eb11bb59ec4951cb9ec5b8e");
+    }, "5dc55ccb3b616db3dc651c5a33ac0d4e", "5429cd1e4beb75583538aa8f14e99e17");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;

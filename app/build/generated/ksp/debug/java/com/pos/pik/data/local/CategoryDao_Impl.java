@@ -204,6 +204,41 @@ public final class CategoryDao_Impl implements CategoryDao {
   }
 
   @Override
+  public Object getAllCategoriesSync(final Continuation<? super List<CategoryEntity>> $completion) {
+    final String _sql = "SELECT * FROM categories";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<CategoryEntity>>() {
+      @Override
+      @NonNull
+      public List<CategoryEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfCatId = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_id");
+          final int _cursorIndexOfCatName = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_name");
+          final int _cursorIndexOfCatSubname = CursorUtil.getColumnIndexOrThrow(_cursor, "cat_subname");
+          final List<CategoryEntity> _result = new ArrayList<CategoryEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final CategoryEntity _item;
+            final int _tmpCatId;
+            _tmpCatId = _cursor.getInt(_cursorIndexOfCatId);
+            final String _tmpCatName;
+            _tmpCatName = _cursor.getString(_cursorIndexOfCatName);
+            final String _tmpCatSubname;
+            _tmpCatSubname = _cursor.getString(_cursorIndexOfCatSubname);
+            _item = new CategoryEntity(_tmpCatId,_tmpCatName,_tmpCatSubname);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Object getMainCategories(final Continuation<? super List<String>> $completion) {
     final String _sql = "SELECT DISTINCT cat_name FROM categories";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);

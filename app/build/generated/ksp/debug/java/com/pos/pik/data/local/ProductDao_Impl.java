@@ -496,6 +496,57 @@ public final class ProductDao_Impl implements ProductDao {
     }, $completion);
   }
 
+  @Override
+  public Object getAllProductsSync(final Continuation<? super List<ProductEntity>> $completion) {
+    final String _sql = "SELECT * FROM products";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<ProductEntity>>() {
+      @Override
+      @NonNull
+      public List<ProductEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfPrdSku = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_sku");
+          final int _cursorIndexOfPrdCategoryId = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_category_id");
+          final int _cursorIndexOfPrdName = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_name");
+          final int _cursorIndexOfPrdCostPrice = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_cost_price");
+          final int _cursorIndexOfPrdSellingPrice = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_selling_price");
+          final int _cursorIndexOfPrdImage = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_image");
+          final int _cursorIndexOfPrdIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "prd_is_active");
+          final List<ProductEntity> _result = new ArrayList<ProductEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final ProductEntity _item;
+            final String _tmpPrdSku;
+            _tmpPrdSku = _cursor.getString(_cursorIndexOfPrdSku);
+            final int _tmpPrdCategoryId;
+            _tmpPrdCategoryId = _cursor.getInt(_cursorIndexOfPrdCategoryId);
+            final String _tmpPrdName;
+            _tmpPrdName = _cursor.getString(_cursorIndexOfPrdName);
+            final double _tmpPrdCostPrice;
+            _tmpPrdCostPrice = _cursor.getDouble(_cursorIndexOfPrdCostPrice);
+            final double _tmpPrdSellingPrice;
+            _tmpPrdSellingPrice = _cursor.getDouble(_cursorIndexOfPrdSellingPrice);
+            final String _tmpPrdImage;
+            if (_cursor.isNull(_cursorIndexOfPrdImage)) {
+              _tmpPrdImage = null;
+            } else {
+              _tmpPrdImage = _cursor.getString(_cursorIndexOfPrdImage);
+            }
+            final int _tmpPrdIsActive;
+            _tmpPrdIsActive = _cursor.getInt(_cursorIndexOfPrdIsActive);
+            _item = new ProductEntity(_tmpPrdSku,_tmpPrdCategoryId,_tmpPrdName,_tmpPrdCostPrice,_tmpPrdSellingPrice,_tmpPrdImage,_tmpPrdIsActive);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

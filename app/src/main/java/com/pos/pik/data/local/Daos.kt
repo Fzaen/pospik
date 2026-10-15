@@ -42,6 +42,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY cat_name ASC")
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM categories")
+    suspend fun getAllCategoriesSync(): List<CategoryEntity>
+
     @Query("SELECT DISTINCT cat_name FROM categories")
     suspend fun getMainCategories(): List<String>
 
@@ -101,6 +104,9 @@ interface ProductDao {
 
     @Query("DELETE FROM products")
     suspend fun deleteAllProducts()
+
+    @Query("SELECT * FROM products")
+    suspend fun getAllProductsSync(): List<ProductEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(products: List<ProductEntity>)

@@ -13,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Print
@@ -30,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pos.pik.util.DatabaseBackupUtil
+import com.pos.pik.util.ServerSyncUtil
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,15 +41,19 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val currentSettings by viewModel.settings.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     var nameText by remember { mutableStateOf("") }
     var addressText by remember { mutableStateOf("") }
     var phoneText by remember { mutableStateOf("") }
+    var tenantIdText by remember { mutableStateOf("toko_1") }
+    var serverUrlText by remember { mutableStateOf("https://api.pospik.com") }
     var marginText by remember { mutableStateOf("5.0") }
     var paperSize by remember { mutableIntStateOf(80) }
 
     var expandedPaperSize by remember { mutableStateOf(false) }
     var selectedRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var isSyncing by remember { mutableStateOf(false) }
 
     val restoreFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -60,6 +68,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             nameText = s.setWarungName
             addressText = s.setAddress
             phoneText = s.setPhone
+            tenantIdText = s.setTenantId
+            serverUrlText = s.setServerUrl
             marginText = s.setMargin.toString()
             paperSize = s.setPaperSize
         }
@@ -71,14 +81,40 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             .padding(20.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("INFORMASI WARUNG", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text("INFORMASI WARUNG & TENANT", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = nameText,
             onValueChange = { nameText = it },
-            label = { Text("Nama Warung") },
+            label = { Text("Nama Warung / Toko") },
             leadingIcon = { Icon(Icons.Default.Storefront, contentDescription = null) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = tenantIdText,
+            onValueChange = { tenantIdText = it },
+            label = { Text("Kode Toko / Tenant ID (cth: toko_1)") },
+            leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = serverUrlText,
+            onValueChange = { serverUrlText = it },
+            label = { Text("URL Server API (cth: https://xxx.trycloudflare.com)") },
+            leadingIcon = { Icon(Icons.Default.Dns, contentDescription = null) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
@@ -156,7 +192,38 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("KEAMANAN & CADANGAN DATA", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text("KONEKSI & BACKUP KE SERVER API", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    isSyncing = true
+                    // Save settings first
+                    viewModel.saveSettings(nameText, addressText, phoneText, null, paperSize, marginText.toDoubleOrNull() ?: 5.0, tenantIdText, serverUrlText)
+                    val (_, msg) = ServerSyncUtil.syncPushMasterData(context, serverUrlText, tenantIdText)
+                    isSyncing = false
+                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                }
+            },
+            enabled = !isSyncing,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+        ) {
+            if (isSyncing) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+            } else {
+                Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("KIRIM MASTER DATA KE SERVER API", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text("KEAMANAN & CADANGAN LOKAL (SQLITE)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
@@ -174,7 +241,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             ) {
                 Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("BACKUP")
+                Text("BACKUP LOKAL")
             }
 
             OutlinedButton(
@@ -185,7 +252,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             ) {
                 Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("RESTORE")
+                Text("RESTORE LOKAL")
             }
         }
 
@@ -230,7 +297,9 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     phone = phoneText,
                     printer = null,
                     paperSize = paperSize,
-                    margin = marginText.toDoubleOrNull() ?: 5.0
+                    margin = marginText.toDoubleOrNull() ?: 5.0,
+                    tenantId = tenantIdText,
+                    serverUrl = serverUrlText
                 )
                 Toast.makeText(context, "Pengaturan berhasil disimpan!", Toast.LENGTH_SHORT).show()
             },

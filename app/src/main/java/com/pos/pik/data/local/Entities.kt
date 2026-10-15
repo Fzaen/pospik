@@ -186,7 +186,9 @@ data class AppSettingEntity(
     @ColumnInfo(name = "set_phone") val setPhone: String = "0812-3456-7890",
     @ColumnInfo(name = "set_default_printer") val setDefaultPrinter: String? = null,
     @ColumnInfo(name = "set_paper_size") val setPaperSize: Int = 80,
-    @ColumnInfo(name = "set_margin") val setMargin: Double = 5.0
+    @ColumnInfo(name = "set_margin") val setMargin: Double = 5.0,
+    @ColumnInfo(name = "set_tenant_id") val setTenantId: String = "toko_1",
+    @ColumnInfo(name = "set_server_url") val setServerUrl: String = "https://api.pospik.com"
 )
 
 // Data Classes for Reports

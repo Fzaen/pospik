@@ -21,7 +21,9 @@ class SettingsViewModel(private val repository: PosRepository) : ViewModel() {
         phone: String,
         printer: String?,
         paperSize: Int,
-        margin: Double
+        margin: Double,
+        tenantId: String,
+        serverUrl: String
     ) {
         viewModelScope.launch {
             repository.updateSettings(
@@ -32,7 +34,9 @@ class SettingsViewModel(private val repository: PosRepository) : ViewModel() {
                     setPhone = phone,
                     setDefaultPrinter = printer,
                     setPaperSize = paperSize,
-                    setMargin = margin
+                    setMargin = margin,
+                    setTenantId = tenantId.trim(),
+                    setServerUrl = serverUrl.trim()
                 )
             )
         }

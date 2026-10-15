@@ -38,7 +38,7 @@ public final class AppSettingDao_Impl implements AppSettingDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `app_settings` (`set_id`,`set_warung_name`,`set_address`,`set_phone`,`set_default_printer`,`set_paper_size`,`set_margin`) VALUES (?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `app_settings` (`set_id`,`set_warung_name`,`set_address`,`set_phone`,`set_default_printer`,`set_paper_size`,`set_margin`,`set_tenant_id`,`set_server_url`) VALUES (?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -55,6 +55,8 @@ public final class AppSettingDao_Impl implements AppSettingDao {
         }
         statement.bindLong(6, entity.getSetPaperSize());
         statement.bindDouble(7, entity.getSetMargin());
+        statement.bindString(8, entity.getSetTenantId());
+        statement.bindString(9, entity.getSetServerUrl());
       }
     };
   }
@@ -95,6 +97,8 @@ public final class AppSettingDao_Impl implements AppSettingDao {
           final int _cursorIndexOfSetDefaultPrinter = CursorUtil.getColumnIndexOrThrow(_cursor, "set_default_printer");
           final int _cursorIndexOfSetPaperSize = CursorUtil.getColumnIndexOrThrow(_cursor, "set_paper_size");
           final int _cursorIndexOfSetMargin = CursorUtil.getColumnIndexOrThrow(_cursor, "set_margin");
+          final int _cursorIndexOfSetTenantId = CursorUtil.getColumnIndexOrThrow(_cursor, "set_tenant_id");
+          final int _cursorIndexOfSetServerUrl = CursorUtil.getColumnIndexOrThrow(_cursor, "set_server_url");
           final AppSettingEntity _result;
           if (_cursor.moveToFirst()) {
             final int _tmpSetId;
@@ -115,7 +119,11 @@ public final class AppSettingDao_Impl implements AppSettingDao {
             _tmpSetPaperSize = _cursor.getInt(_cursorIndexOfSetPaperSize);
             final double _tmpSetMargin;
             _tmpSetMargin = _cursor.getDouble(_cursorIndexOfSetMargin);
-            _result = new AppSettingEntity(_tmpSetId,_tmpSetWarungName,_tmpSetAddress,_tmpSetPhone,_tmpSetDefaultPrinter,_tmpSetPaperSize,_tmpSetMargin);
+            final String _tmpSetTenantId;
+            _tmpSetTenantId = _cursor.getString(_cursorIndexOfSetTenantId);
+            final String _tmpSetServerUrl;
+            _tmpSetServerUrl = _cursor.getString(_cursorIndexOfSetServerUrl);
+            _result = new AppSettingEntity(_tmpSetId,_tmpSetWarungName,_tmpSetAddress,_tmpSetPhone,_tmpSetDefaultPrinter,_tmpSetPaperSize,_tmpSetMargin,_tmpSetTenantId,_tmpSetServerUrl);
           } else {
             _result = null;
           }
@@ -150,6 +158,8 @@ public final class AppSettingDao_Impl implements AppSettingDao {
           final int _cursorIndexOfSetDefaultPrinter = CursorUtil.getColumnIndexOrThrow(_cursor, "set_default_printer");
           final int _cursorIndexOfSetPaperSize = CursorUtil.getColumnIndexOrThrow(_cursor, "set_paper_size");
           final int _cursorIndexOfSetMargin = CursorUtil.getColumnIndexOrThrow(_cursor, "set_margin");
+          final int _cursorIndexOfSetTenantId = CursorUtil.getColumnIndexOrThrow(_cursor, "set_tenant_id");
+          final int _cursorIndexOfSetServerUrl = CursorUtil.getColumnIndexOrThrow(_cursor, "set_server_url");
           final AppSettingEntity _result;
           if (_cursor.moveToFirst()) {
             final int _tmpSetId;
@@ -170,7 +180,11 @@ public final class AppSettingDao_Impl implements AppSettingDao {
             _tmpSetPaperSize = _cursor.getInt(_cursorIndexOfSetPaperSize);
             final double _tmpSetMargin;
             _tmpSetMargin = _cursor.getDouble(_cursorIndexOfSetMargin);
-            _result = new AppSettingEntity(_tmpSetId,_tmpSetWarungName,_tmpSetAddress,_tmpSetPhone,_tmpSetDefaultPrinter,_tmpSetPaperSize,_tmpSetMargin);
+            final String _tmpSetTenantId;
+            _tmpSetTenantId = _cursor.getString(_cursorIndexOfSetTenantId);
+            final String _tmpSetServerUrl;
+            _tmpSetServerUrl = _cursor.getString(_cursorIndexOfSetServerUrl);
+            _result = new AppSettingEntity(_tmpSetId,_tmpSetWarungName,_tmpSetAddress,_tmpSetPhone,_tmpSetDefaultPrinter,_tmpSetPaperSize,_tmpSetMargin,_tmpSetTenantId,_tmpSetServerUrl);
           } else {
             _result = null;
           }
